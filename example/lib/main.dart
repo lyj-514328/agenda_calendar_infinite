@@ -38,18 +38,21 @@ class _CalendarExamplePageState extends State<CalendarExamplePage> {
         title: const Text('Agenda Calendar Example'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: VerticalCalendar(
-        selectedDay: _selectedDay,
-        minDate: DateTime(2020, 1, 1),
-        maxDate: DateTime(2030, 12, 31),
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-          });
-        },
-        eventsBuilder: (month) {
-          return _generateSampleEvents(month);
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: VerticalCalendar(
+          selectedDay: _selectedDay,
+          minDate: DateTime(2020, 1, 1),
+          maxDate: DateTime(2030, 12, 31),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+            });
+          },
+          eventsBuilder: (month) {
+            return _generateSampleEvents(month);
+          },
+        ),
       ),
     );
   }
