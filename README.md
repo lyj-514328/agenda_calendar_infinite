@@ -14,7 +14,7 @@ A Flutter calendar widget with infinite scroll and event display support.
 
 ## Demo
 
-![Demo](https://gist.githubusercontent.com/lyj-514328/0d23f1ef10584eaac9ae318fae9b1106/raw/88475bc2fad7bc83ab24b3d37179907ae8c3d097/demo.apng)
+![Demo](https://gist.githubusercontent.com/lyj-514328/0d23f1ef10584eaac9ae318fae9b1106/raw/a9a57e74256cfaa61216787feb4d8da4b71fb005/2026-03-11%252020-57-15-soConvert.webp)
 
 ## Getting started
 
@@ -22,7 +22,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  agenda_calendar_infinite: ^0.0.2
+  agenda_calendar_infinite: ^0.0.3
 ```
 
 Or reference it locally:
