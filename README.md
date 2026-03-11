@@ -1,39 +1,86 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# Agenda Calendar Infinite
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A Flutter calendar widget with infinite scroll and event display support.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Infinite scrollable calendar (both forward and backward)
+- Event display support with customizable colors
+- Multi-day event support (events spanning multiple days)
+- Cross-week event handling (events that span across weeks are displayed correctly in each week)
+- Customizable date range (minDate and maxDate)
+- Day selection with callback
+- Material Design 3 support
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add the package to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  agenda_calendar_infinite: ^0.0.1
+```
+
+Or reference it locally:
+
+```yaml
+dependencies:
+  agenda_calendar_infinite:
+    path: path/to/agenda_calendar_infinite
+```
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
 ```dart
-const like = 'sample';
+import 'package:agenda_calendar_infinite/agenda_calendar_infinite.dart';
+
+VerticalCalendar(
+  selectedDay: _selectedDay,
+  minDate: DateTime(2020, 1, 1),
+  maxDate: DateTime(2030, 12, 31),
+  onDaySelected: (selectedDay, focusedDay) {
+    setState(() {
+      _selectedDay = selectedDay;
+    });
+  },
+  eventsBuilder: (month) {
+    // Return events for the given month
+    return [
+      CalendarEvent(
+        id: '1',
+        title: 'Meeting',
+        startDate: DateTime(2024, 1, 5),
+        endDate: DateTime(2024, 1, 7),
+        color: Colors.blue,
+      ),
+    ];
+  },
+)
+```
+
+## CalendarEvent Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| id | String | Unique identifier for the event |
+| title | String | Display title of the event |
+| startDate | DateTime | Start date of the event |
+| endDate | DateTime | End date of the event |
+| color | Color | Background color of the event (default: Colors.blue) |
+| data | dynamic | Custom data associated with the event |
+
+## Example
+
+See the `example` folder for a complete example application.
+
+Run the example:
+
+```bash
+cd example
+flutter run
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+- Repository: https://github.com/your-githubusername/agenda_calendar_infinite
+- Report issues at: https://github.com/your-githubusername/agenda_calendar_infinite/issues

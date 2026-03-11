@@ -1,0 +1,21 @@
+name: agenda_calendar_infinite_example
+description: "Example app for agenda_calendar_infinite package."
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  agenda_calendar_infinite:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
