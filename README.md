@@ -12,6 +12,14 @@ A Flutter calendar widget with infinite scroll and event display support.
 - Day selection with callback
 - Material Design 3 support
 
+## Screenshots
+
+![Screenshot](doc/screenshot.png)
+
+## Demo
+
+![Demo](doc/demo.apng)
+
 ## Getting started
 
 Add the package to your `pubspec.yaml`:
