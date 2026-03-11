@@ -1,3 +1,18 @@
-## 0.0.1
+# Changelog
 
-* TODO: Describe initial release.
+All notable changes to `agenda_calendar_infinite` will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.0.1] - 2026-03-11
+
+### Added
+- Initial release
+- Infinite scrollable vertical calendar
+- Event display with customizable colors
+- Multi-day and cross-week event support
+- Customizable date range (minDate/maxDate)
+- Day selection callback
+- Material Design 3 support
+- Example application
