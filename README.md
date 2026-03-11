@@ -60,14 +60,14 @@ VerticalCalendar(
 
 ## CalendarEvent Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| id | String | Unique identifier for the event |
-| title | String | Display title of the event |
-| startDate | DateTime | Start date of the event |
-| endDate | DateTime | End date of the event |
-| color | Color | Background color of the event (default: Colors.blue) |
-| data | dynamic | Custom data associated with the event |
+| Property  | Type     | Description                                          |
+| --------- | -------- | ---------------------------------------------------- |
+| id        | String   | Unique identifier for the event                      |
+| title     | String   | Display title of the event                           |
+| startDate | DateTime | Start date of the event                              |
+| endDate   | DateTime | End date of the event                                |
+| color     | Color    | Background color of the event (default: Colors.blue) |
+| data      | dynamic  | Custom data associated with the event                |
 
 ## Example
 
@@ -82,5 +82,5 @@ flutter run
 
 ## Additional information
 
-- Repository: https://github.com/your-githubusername/agenda_calendar_infinite
-- Report issues at: https://github.com/your-githubusername/agenda_calendar_infinite/issues
+- Repository: [lyj-514328/agenda_calendar_infinite](https://github.com/lyj-514328/agenda_calendar_infinite)
+- Report issues at: [Issues · lyj-514328/agenda_calendar_infinite](https://github.com/lyj-514328/agenda_calendar_infinite/issues)
