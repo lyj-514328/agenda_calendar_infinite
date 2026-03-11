@@ -22,7 +22,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  agenda_calendar_infinite: ^0.0.1
+  agenda_calendar_infinite: ^0.0.2
 ```
 
 Or reference it locally:
