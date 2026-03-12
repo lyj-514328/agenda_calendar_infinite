@@ -31,4 +31,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get monthYearFormat => 'yyyy年M月';
+
+  @override
+  String yearFormat(int year) {
+    return '$year年';
+  }
 }

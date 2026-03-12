@@ -7,5 +7,14 @@
   "friday": "五",
   "saturday": "六",
   "sunday": "日",
-  "monthYearFormat": "yyyy年M月"
+  "monthYearFormat": "yyyy年M月",
+  "yearFormat": "{year}年",
+  "@yearFormat": {
+    "description": "年份显示格式",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  }
 }

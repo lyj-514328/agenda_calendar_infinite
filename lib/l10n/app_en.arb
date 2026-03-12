@@ -7,5 +7,14 @@
   "friday": "Fri",
   "saturday": "Sat",
   "sunday": "Sun",
-  "monthYearFormat": "MMMM yyyy"
+  "monthYearFormat": "MMMM yyyy",
+  "yearFormat": "{year}",
+  "@yearFormat": {
+    "description": "Year display format",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  }
 }

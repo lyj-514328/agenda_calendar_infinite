@@ -145,6 +145,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'MMMM yyyy'**
   String get monthYearFormat;
+
+  /// Year display format
+  ///
+  /// In en, this message translates to:
+  /// **'{year}'**
+  String yearFormat(int year);
 }
 
 class _AppLocalizationsDelegate

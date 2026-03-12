@@ -124,6 +124,7 @@ class VerticalCalendarState extends State<VerticalCalendar> {
             _buildMonthHeader(context, monthDate),
             _buildWeekDays(context),
             _buildMonthGrid(context, monthDate, events, cellWidth),
+            const Divider(height: 8, thickness: 1),
           ],
         );
       },

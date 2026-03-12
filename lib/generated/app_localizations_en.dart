@@ -31,4 +31,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get monthYearFormat => 'MMMM yyyy';
+
+  @override
+  String yearFormat(int year) {
+    return '$year';
+  }
 }

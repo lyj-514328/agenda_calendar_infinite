@@ -194,6 +194,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                 _buildForwardSliver(totalHeight),
               ],
             ),
+            _buildYearHeaders(totalHeight, _scrollOffset, constraints.maxWidth),
             _buildEventLayer(totalHeight, _scrollOffset, constraints.maxWidth),
           ],
         );
@@ -201,10 +202,93 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     );
   }
 
+  Widget _buildYearHeaders(
+    double totalHeight,
+    double scrollOffset,
+    double viewportWidth,
+  ) {
+    // 计算当前可见范围内的年份
+    final startDate = _getDateFromOffset(
+      (scrollOffset / widget.dayWidth).floor() - 366,
+    );
+    final endDate = _getDateFromOffset(
+      (scrollOffset / widget.dayWidth).ceil() +
+          viewportWidth ~/ widget.dayWidth +
+          366,
+    );
+
+    final yearWidgets = <Widget>[];
+    int currentYear = startDate.year;
+    while (currentYear <= endDate.year) {
+      // 计算年份的位置和宽度
+      final firstDayOfYear = DateTime(currentYear, 1, 1);
+      final lastDayOfYear = DateTime(currentYear, 12, 31);
+      final startOffset = _getDayOffsetFromInitial(firstDayOfYear);
+      final endOffset = _getDayOffsetFromInitial(lastDayOfYear);
+      final left = startOffset * widget.dayWidth - scrollOffset;
+      final width = (endOffset - startOffset + 1) * widget.dayWidth;
+
+      // 只有当年份在可见范围内才渲染
+      if (left + width > 0 && left < viewportWidth) {
+        // 计算文字在可见区域居中
+        final visibleLeft = math.max(left, 0.0);
+        final visibleRight = math.min(left + width, viewportWidth);
+        final textLeftPadding = (visibleLeft - left).clamp(
+          16.0,
+          double.infinity,
+        );
+        final textRightPadding = (left + width - visibleRight).clamp(
+          16.0,
+          double.infinity,
+        );
+
+        yearWidgets.add(
+          Positioned(
+            left: left,
+            top: 0,
+            width: width,
+            height: 28,
+            child: Container(
+              padding: EdgeInsets.only(
+                left: textLeftPadding,
+                right: textRightPadding,
+              ),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                border: const Border(
+                  right: BorderSide(width: 0.5, color: Colors.grey),
+                ),
+              ),
+              child: Text(
+                getLoc(context).yearFormat(currentYear),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+      }
+      currentYear++;
+    }
+
+    return SizedBox(
+      width: viewportWidth,
+      height: totalHeight,
+      child: Stack(children: yearWidgets),
+    );
+  }
+
   Widget _buildEventLayer(
     double totalHeight,
     double scrollOffset,
-    double visibleWidth,
+    double viewportWidth,
   ) {
     final visibleEvents = <_VisibleEvent>[];
     const maxDays = 1000; // -500 到 +500 天
@@ -212,7 +296,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
 
     // 计算可见范围
     final scrollOffsetDay = (scrollOffset / widget.dayWidth).floor();
-    final visibleDays = (visibleWidth / widget.dayWidth).ceil();
+    final visibleDays = (viewportWidth / widget.dayWidth).ceil();
     final visibleStartDay = scrollOffsetDay - 1;
     final visibleEndDay = scrollOffsetDay + visibleDays + 1;
 
@@ -263,7 +347,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                     e.event,
                     e.actualStartOffset - scrollOffset,
                     e.actualEndOffset - scrollOffset,
-                    visibleWidth,
+                    viewportWidth,
                   ),
                 ),
               ),
@@ -307,7 +391,6 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     final isWeekend =
         date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
     final isToday = DateUtils.isSameDay(date, DateTime.now());
-
     return SizedBox(
       width: widget.dayWidth,
       height: totalHeight,
@@ -351,10 +434,10 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       loc.sunday,
     ];
     return Positioned(
-      top: 0,
+      top: 28, // 年份标签高度28，日期头部往下移
       left: 0,
       right: 0,
-      height: widget.headerHeight,
+      height: widget.headerHeight - 25, // 多留3px空间避免文本溢出
       child: Container(
         decoration: BoxDecoration(
           color: isWeekend
@@ -381,7 +464,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                     : null,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2), // 缩小间距避免溢出
             Text(
               weekdayNames[date.weekday - 1],
               style: TextStyle(
