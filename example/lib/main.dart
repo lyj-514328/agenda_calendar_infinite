@@ -52,10 +52,7 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.calendar_month),
             label: '日历视图',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: '甘特图视图',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '甘特图视图'),
         ],
       ),
     );
@@ -153,7 +150,7 @@ class GanttChartExamplePage extends StatefulWidget {
 }
 
 class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
-  late final List<GanttEvent> _events;
+  late final List<CalendarEvent> _events;
 
   @override
   void initState() {
@@ -161,9 +158,9 @@ class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
     _events = _generateEvents();
   }
 
-  List<GanttEvent> _generateEvents() {
+  List<CalendarEvent> _generateEvents() {
     final now = DateTime.now();
-    final events = <GanttEvent>[];
+    final events = <CalendarEvent>[];
 
     // 生成 50 个随机事件
     final colors = [
@@ -185,7 +182,7 @@ class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
       final color = colors[i % colors.length];
 
       events.add(
-        GanttEvent(
+        CalendarEvent(
           id: '$i',
           title: '任务 ${i + 1}',
           startDate: now.add(Duration(days: startDay)),
@@ -202,10 +199,10 @@ class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('甘特图视图示例'),
+        title: const Text('水平日历视图示例'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: GanttChart(
+      body: HorizontalCalendar(
         events: _events,
         dayWidth: 120,
         eventHeight: 40,
@@ -214,9 +211,9 @@ class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
         minDate: DateTime.now().subtract(const Duration(days: 60)),
         maxDate: DateTime.now().add(const Duration(days: 120)),
         onEventTap: (event) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('点击了事件: ${event.title}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('点击了事件: ${event.title}')));
         },
       ),
     );

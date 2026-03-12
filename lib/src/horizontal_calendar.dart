@@ -3,28 +3,11 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-import 'gantt_event_layout.dart';
+import 'calendar_event.dart';
+import 'horizontal_calendar_event_layout.dart';
 
-class GanttEvent {
-  final String id;
-  final String title;
-  final DateTime startDate;
-  final DateTime endDate;
-  final Color color;
-  final dynamic data;
-
-  GanttEvent({
-    required this.id,
-    required this.title,
-    required this.startDate,
-    required this.endDate,
-    this.color = Colors.blue,
-    this.data,
-  });
-}
-
-class GanttChart extends StatefulWidget {
-  final List<GanttEvent> events;
+class HorizontalCalendar extends StatefulWidget {
+  final List<CalendarEvent> events;
   final double dayWidth;
   final double eventHeight;
   final double rowHeight;
@@ -32,9 +15,9 @@ class GanttChart extends StatefulWidget {
   final DateTime? initialDate;
   final DateTime? minDate;
   final DateTime? maxDate;
-  final void Function(GanttEvent event)? onEventTap;
+  final void Function(CalendarEvent event)? onEventTap;
 
-  const GanttChart({
+  const HorizontalCalendar({
     super.key,
     required this.events,
     this.dayWidth = 120,
@@ -48,13 +31,15 @@ class GanttChart extends StatefulWidget {
   });
 
   @override
-  State<GanttChart> createState() => GanttChartState();
+  State<HorizontalCalendar> createState() => _HorizontalCalendarState();
 }
 
-class GanttChartState extends State<GanttChart> {
+class _HorizontalCalendarState extends State<HorizontalCalendar> {
   late final ScrollController _horizontalController;
   late DateTime _initialDate;
-  final Key _centerKey = const ValueKey<String>('gantt-center-key');
+  final Key _centerKey = const ValueKey<String>(
+    'horizontal-calendar-center-key',
+  );
 
   Map<String, int>? _cachedEventRows;
   int? _cachedTotalRows;
@@ -82,7 +67,7 @@ class GanttChartState extends State<GanttChart> {
   }
 
   @override
-  void didUpdateWidget(GanttChart oldWidget) {
+  void didUpdateWidget(HorizontalCalendar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.events != widget.events ||
         oldWidget.minDate != widget.minDate ||
@@ -132,13 +117,16 @@ class GanttChartState extends State<GanttChart> {
         final ranges = usedRows[row] ?? [];
         bool canPlace = true;
         for (final range in ranges) {
-          if (!(eventEnd.isBefore(range.start) || eventStart.isAfter(range.end))) {
+          if (!(eventEnd.isBefore(range.start) ||
+              eventStart.isAfter(range.end))) {
             canPlace = false;
             break;
           }
         }
         if (canPlace) {
-          usedRows.putIfAbsent(row, () => []).add(DateTimeRange(start: eventStart, end: eventEnd));
+          usedRows
+              .putIfAbsent(row, () => [])
+              .add(DateTimeRange(start: eventStart, end: eventEnd));
           eventRows[event.id] = row;
           placed = true;
         } else {
@@ -148,17 +136,27 @@ class GanttChartState extends State<GanttChart> {
     }
 
     _cachedEventRows = eventRows;
-    _cachedTotalRows = usedRows.keys.isNotEmpty ? usedRows.keys.reduce(math.max) + 1 : 0;
+    _cachedTotalRows = usedRows.keys.isNotEmpty
+        ? usedRows.keys.reduce(math.max) + 1
+        : 0;
   }
 
   int _getDayOffsetFromInitial(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    final normalizedInitial = DateTime(_initialDate.year, _initialDate.month, _initialDate.day);
+    final normalizedInitial = DateTime(
+      _initialDate.year,
+      _initialDate.month,
+      _initialDate.day,
+    );
     return normalizedDate.difference(normalizedInitial).inDays;
   }
 
   DateTime _getDateFromOffset(int offset) {
-    return DateTime(_initialDate.year, _initialDate.month, _initialDate.day + offset);
+    return DateTime(
+      _initialDate.year,
+      _initialDate.month,
+      _initialDate.day + offset,
+    );
   }
 
   @override
@@ -169,7 +167,8 @@ class GanttChartState extends State<GanttChart> {
 
   @override
   Widget build(BuildContext context) {
-    final totalHeight = widget.headerHeight + (_cachedTotalRows ?? 0) * widget.rowHeight;
+    final totalHeight =
+        widget.headerHeight + (_cachedTotalRows ?? 0) * widget.rowHeight;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -179,6 +178,7 @@ class GanttChartState extends State<GanttChart> {
               controller: _horizontalController,
               scrollDirection: Axis.horizontal,
               center: _centerKey,
+              anchor: 0.5,
               scrollBehavior: const MaterialScrollBehavior().copyWith(
                 dragDevices: {
                   PointerDeviceKind.mouse,
@@ -199,7 +199,11 @@ class GanttChartState extends State<GanttChart> {
     );
   }
 
-  Widget _buildEventLayer(double totalHeight, double scrollOffset, double visibleWidth) {
+  Widget _buildEventLayer(
+    double totalHeight,
+    double scrollOffset,
+    double visibleWidth,
+  ) {
     final visibleEvents = <_VisibleEvent>[];
     const maxDays = 1000; // -500 到 +500 天
     const halfMaxDays = 500; // 偏移量
@@ -224,12 +228,16 @@ class GanttChartState extends State<GanttChart> {
 
       final row = _cachedEventRows?[event.id] ?? 0;
 
-      visibleEvents.add(_VisibleEvent(
-        event: event,
-        startColumn: displayStart + halfMaxDays,
-        endColumn: displayEnd + halfMaxDays,
-        row: row,
-      ));
+      visibleEvents.add(
+        _VisibleEvent(
+          event: event,
+          startColumn: displayStart + halfMaxDays,
+          endColumn: displayEnd + halfMaxDays,
+          row: row,
+          actualStartOffset: startDayOffset * widget.dayWidth,
+          actualEndOffset: (endDayOffset + 1) * widget.dayWidth,
+        ),
+      );
     }
 
     return Positioned(
@@ -237,19 +245,28 @@ class GanttChartState extends State<GanttChart> {
       top: widget.headerHeight,
       width: maxDays * widget.dayWidth,
       height: totalHeight - widget.headerHeight,
-      child: GanttEventLayout(
+      child: HorizontalCalendarEventLayout(
         dayWidth: widget.dayWidth,
         rowHeight: widget.rowHeight,
-        items: visibleEvents.map((e) => GanttEventItem(
-          id: e.event.id,
-          startColumn: e.startColumn,
-          endColumn: e.endColumn,
-          row: e.row,
-          child: GestureDetector(
-            onTap: () => widget.onEventTap?.call(e.event),
-            child: _buildEventWidget(e.event),
-          ),
-        )).toList(),
+        items: visibleEvents
+            .map(
+              (e) => HorizontalCalendarEventItem(
+                id: e.event.id,
+                startColumn: e.startColumn,
+                endColumn: e.endColumn,
+                row: e.row,
+                child: GestureDetector(
+                  onTap: () => widget.onEventTap?.call(e.event),
+                  child: _buildEventWidget(
+                    e.event,
+                    e.actualStartOffset - scrollOffset,
+                    e.actualEndOffset - scrollOffset,
+                    visibleWidth,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -306,7 +323,9 @@ class GanttChartState extends State<GanttChart> {
       child: Container(
         decoration: BoxDecoration(
           color: isWeekend
-              ? Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3)
+              ? Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.3)
               : null,
           border: const Border(
             right: BorderSide(width: 0.5, color: Colors.grey),
@@ -327,8 +346,8 @@ class GanttChartState extends State<GanttChart> {
           color: isWeekend
               ? Theme.of(context).colorScheme.surfaceContainerHighest
               : isToday
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : null,
+              ? Theme.of(context).colorScheme.primaryContainer
+              : null,
           border: const Border(
             right: BorderSide(width: 0.5, color: Colors.grey),
           ),
@@ -344,8 +363,8 @@ class GanttChartState extends State<GanttChart> {
                 color: isWeekend
                     ? Theme.of(context).colorScheme.error
                     : isToday
-                        ? Theme.of(context).colorScheme.onPrimaryContainer
-                        : null,
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : null,
               ),
             ),
             const SizedBox(height: 4),
@@ -356,8 +375,8 @@ class GanttChartState extends State<GanttChart> {
                 color: isWeekend
                     ? Theme.of(context).colorScheme.error
                     : isToday
-                        ? Theme.of(context).colorScheme.onPrimaryContainer
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -366,7 +385,34 @@ class GanttChartState extends State<GanttChart> {
     );
   }
 
-  Widget _buildEventWidget(GanttEvent event) {
+  Widget _buildEventWidget(
+    CalendarEvent event,
+    double visibleLeft,
+    double visibleRight,
+    double visibleWidth,
+  ) {
+    // 计算事件在可视区域内的实际边界
+    final actualVisibleLeft = math.max(visibleLeft, 0.0);
+    final actualVisibleRight = math.min(visibleRight, visibleWidth);
+
+    // 可见区域居中对齐
+    const TextAlign textAlign = TextAlign.center;
+    // 计算左右内边距，让文字始终在可见区域内居中显示
+    final leftPadding = (actualVisibleLeft - visibleLeft).clamp(
+      8.0,
+      double.infinity,
+    );
+    final rightPadding = (visibleRight - actualVisibleRight).clamp(
+      8.0,
+      double.infinity,
+    );
+    final padding = EdgeInsets.only(
+      left: leftPadding,
+      right: rightPadding,
+      top: 4,
+      bottom: 4,
+    );
+
     return Container(
       margin: EdgeInsets.symmetric(
         vertical: (widget.rowHeight - widget.eventHeight) / 2,
@@ -377,15 +423,16 @@ class GanttChartState extends State<GanttChart> {
         borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: padding,
         child: Text(
           event.title,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            overflow: TextOverflow.ellipsis,
           ),
+          textAlign: textAlign,
+          overflow: TextOverflow.ellipsis,
           maxLines: 2,
         ),
       ),
@@ -394,16 +441,20 @@ class GanttChartState extends State<GanttChart> {
 }
 
 class _VisibleEvent {
-  final GanttEvent event;
+  final CalendarEvent event;
   final int startColumn;
   final int endColumn;
   final int row;
+  final double actualStartOffset;
+  final double actualEndOffset;
 
   _VisibleEvent({
     required this.event,
     required this.startColumn,
     required this.endColumn,
     required this.row,
+    required this.actualStartOffset,
+    required this.actualEndOffset,
   });
 }
 

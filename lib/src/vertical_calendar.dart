@@ -1,26 +1,9 @@
 import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' hide TextDirection;
+import 'package:intl/intl.dart';
 
+import 'calendar_event.dart';
 import 'calendar_event_layout.dart';
-
-class CalendarEvent {
-  final String id;
-  final String title;
-  final DateTime startDate;
-  final DateTime endDate;
-  final Color color;
-  final dynamic data;
-
-  CalendarEvent({
-    required this.id,
-    required this.title,
-    required this.startDate,
-    required this.endDate,
-    this.color = Colors.blue,
-    this.data,
-  });
-}
 
 class VerticalCalendar extends StatefulWidget {
   final DateTime? selectedDay;

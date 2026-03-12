@@ -3,14 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-class GanttEventItem {
+class HorizontalCalendarEventItem {
   final String id;
   final int startColumn;
   final int endColumn;
   final int row;
   final Widget child;
 
-  GanttEventItem({
+  HorizontalCalendarEventItem({
     required this.id,
     required this.startColumn,
     required this.endColumn,
@@ -19,26 +19,26 @@ class GanttEventItem {
   });
 }
 
-class GanttEventLayout extends MultiChildRenderObjectWidget {
+class HorizontalCalendarEventLayout extends MultiChildRenderObjectWidget {
   final double dayWidth;
   final double rowHeight;
   final double columnSpacing;
 
-  GanttEventLayout({
+  HorizontalCalendarEventLayout({
     super.key,
     required this.dayWidth,
     required this.rowHeight,
     this.columnSpacing = 0,
-    required List<GanttEventItem> items,
+    required List<HorizontalCalendarEventItem> items,
   }) : super(
           children: items
-              .map((e) => _GanttEventItemData(item: e, child: e.child))
+              .map((e) => _HorizontalCalendarEventItemData(item: e, child: e.child))
               .toList(),
         );
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderGanttEventLayout(
+    return RenderHorizontalCalendarEventLayout(
       dayWidth: dayWidth,
       rowHeight: rowHeight,
       columnSpacing: columnSpacing,
@@ -48,7 +48,7 @@ class GanttEventLayout extends MultiChildRenderObjectWidget {
   @override
   void updateRenderObject(
     BuildContext context,
-    RenderGanttEventLayout renderObject,
+    RenderHorizontalCalendarEventLayout renderObject,
   ) {
     renderObject
       ..dayWidth = dayWidth
@@ -57,14 +57,14 @@ class GanttEventLayout extends MultiChildRenderObjectWidget {
   }
 }
 
-class _GanttEventItemData extends ParentDataWidget<_GanttEventItemParentData> {
-  final GanttEventItem item;
+class _HorizontalCalendarEventItemData extends ParentDataWidget<_HorizontalCalendarEventItemParentData> {
+  final HorizontalCalendarEventItem item;
 
-  const _GanttEventItemData({required super.child, required this.item});
+  const _HorizontalCalendarEventItemData({required super.child, required this.item});
 
   @override
   void applyParentData(RenderObject renderObject) {
-    final parentData = renderObject.parentData as _GanttEventItemParentData;
+    final parentData = renderObject.parentData as _HorizontalCalendarEventItemParentData;
     if (parentData.item != item) {
       parentData.item = item;
       renderObject.markNeedsLayout();
@@ -72,22 +72,22 @@ class _GanttEventItemData extends ParentDataWidget<_GanttEventItemParentData> {
   }
 
   @override
-  Type get debugTypicalAncestorWidgetClass => GanttEventLayout;
+  Type get debugTypicalAncestorWidgetClass => HorizontalCalendarEventLayout;
 }
 
-class _GanttEventItemParentData extends ContainerBoxParentData<RenderBox> {
-  GanttEventItem? item;
+class _HorizontalCalendarEventItemParentData extends ContainerBoxParentData<RenderBox> {
+  HorizontalCalendarEventItem? item;
 }
 
-class RenderGanttEventLayout extends RenderBox
+class RenderHorizontalCalendarEventLayout extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, _GanttEventItemParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, _GanttEventItemParentData> {
+        ContainerRenderObjectMixin<RenderBox, _HorizontalCalendarEventItemParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _HorizontalCalendarEventItemParentData> {
   double _dayWidth;
   double _rowHeight;
   double _columnSpacing;
 
-  RenderGanttEventLayout({
+  RenderHorizontalCalendarEventLayout({
     required double dayWidth,
     required double rowHeight,
     required double columnSpacing,
@@ -121,8 +121,8 @@ class RenderGanttEventLayout extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! _GanttEventItemParentData) {
-      child.parentData = _GanttEventItemParentData();
+    if (child.parentData is! _HorizontalCalendarEventItemParentData) {
+      child.parentData = _HorizontalCalendarEventItemParentData();
     }
   }
 
@@ -138,7 +138,7 @@ class RenderGanttEventLayout extends RenderBox
 
     var child = firstChild;
     while (child != null) {
-      final parentData = child.parentData as _GanttEventItemParentData;
+      final parentData = child.parentData as _HorizontalCalendarEventItemParentData;
       final item = parentData.item!;
 
       final columnSpan = item.endColumn - item.startColumn + 1;
