@@ -1,3 +1,4 @@
+import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
@@ -80,6 +81,14 @@ class VerticalCalendarState extends State<VerticalCalendar> {
     return CustomScrollView(
       controller: _scrollController,
       center: _centerKey,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.invertedStylus,
+        },
+      ),
       slivers: [_buildReverseSliverList(), _buildForwardSliverList()],
     );
   }
