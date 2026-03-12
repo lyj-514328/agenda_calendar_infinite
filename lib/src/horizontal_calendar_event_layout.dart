@@ -31,10 +31,12 @@ class HorizontalCalendarEventLayout extends MultiChildRenderObjectWidget {
     this.columnSpacing = 0,
     required List<HorizontalCalendarEventItem> items,
   }) : super(
-          children: items
-              .map((e) => _HorizontalCalendarEventItemData(item: e, child: e.child))
-              .toList(),
-        );
+         children: items
+             .map(
+               (e) => _HorizontalCalendarEventItemData(item: e, child: e.child),
+             )
+             .toList(),
+       );
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -57,14 +59,19 @@ class HorizontalCalendarEventLayout extends MultiChildRenderObjectWidget {
   }
 }
 
-class _HorizontalCalendarEventItemData extends ParentDataWidget<_HorizontalCalendarEventItemParentData> {
+class _HorizontalCalendarEventItemData
+    extends ParentDataWidget<_HorizontalCalendarEventItemParentData> {
   final HorizontalCalendarEventItem item;
 
-  const _HorizontalCalendarEventItemData({required super.child, required this.item});
+  const _HorizontalCalendarEventItemData({
+    required super.child,
+    required this.item,
+  });
 
   @override
   void applyParentData(RenderObject renderObject) {
-    final parentData = renderObject.parentData as _HorizontalCalendarEventItemParentData;
+    final parentData =
+        renderObject.parentData as _HorizontalCalendarEventItemParentData;
     if (parentData.item != item) {
       parentData.item = item;
       renderObject.markNeedsLayout();
@@ -75,14 +82,21 @@ class _HorizontalCalendarEventItemData extends ParentDataWidget<_HorizontalCalen
   Type get debugTypicalAncestorWidgetClass => HorizontalCalendarEventLayout;
 }
 
-class _HorizontalCalendarEventItemParentData extends ContainerBoxParentData<RenderBox> {
+class _HorizontalCalendarEventItemParentData
+    extends ContainerBoxParentData<RenderBox> {
   HorizontalCalendarEventItem? item;
 }
 
 class RenderHorizontalCalendarEventLayout extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, _HorizontalCalendarEventItemParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, _HorizontalCalendarEventItemParentData> {
+        ContainerRenderObjectMixin<
+          RenderBox,
+          _HorizontalCalendarEventItemParentData
+        >,
+        RenderBoxContainerDefaultsMixin<
+          RenderBox,
+          _HorizontalCalendarEventItemParentData
+        > {
   double _dayWidth;
   double _rowHeight;
   double _columnSpacing;
@@ -91,9 +105,9 @@ class RenderHorizontalCalendarEventLayout extends RenderBox
     required double dayWidth,
     required double rowHeight,
     required double columnSpacing,
-  })  : _dayWidth = dayWidth,
-        _rowHeight = rowHeight,
-        _columnSpacing = columnSpacing;
+  }) : _dayWidth = dayWidth,
+       _rowHeight = rowHeight,
+       _columnSpacing = columnSpacing;
 
   double get dayWidth => _dayWidth;
   set dayWidth(double value) {
@@ -138,14 +152,20 @@ class RenderHorizontalCalendarEventLayout extends RenderBox
 
     var child = firstChild;
     while (child != null) {
-      final parentData = child.parentData as _HorizontalCalendarEventItemParentData;
+      final parentData =
+          child.parentData as _HorizontalCalendarEventItemParentData;
       final item = parentData.item!;
 
       final columnSpan = item.endColumn - item.startColumn + 1;
-      final childWidth = columnSpan * dayWidth + (columnSpan - 1) * columnSpacing;
+      final childWidth =
+          columnSpan * dayWidth + (columnSpan - 1) * columnSpacing;
 
       child.layout(
-        BoxConstraints(maxWidth: childWidth, minWidth: childWidth, maxHeight: rowHeight),
+        BoxConstraints(
+          maxWidth: childWidth,
+          minWidth: childWidth,
+          maxHeight: rowHeight,
+        ),
         parentUsesSize: true,
       );
 
