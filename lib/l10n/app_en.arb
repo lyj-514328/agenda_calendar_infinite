@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "monday": "Mon",
+  "tuesday": "Tue",
+  "wednesday": "Wed",
+  "thursday": "Thu",
+  "friday": "Fri",
+  "saturday": "Sat",
+  "sunday": "Sun",
+  "monthYearFormat": "MMMM yyyy"
+}

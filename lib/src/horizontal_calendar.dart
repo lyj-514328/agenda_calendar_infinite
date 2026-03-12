@@ -3,6 +3,7 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
+import '../generated/app_localizations.dart';
 import 'calendar_event.dart';
 import 'horizontal_calendar_event_layout.dart';
 
@@ -336,6 +337,16 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
   }
 
   Widget _buildDayHeader(DateTime date, bool isWeekend, bool isToday) {
+    final loc = AppLocalizations.of(context)!;
+    final weekdayNames = [
+      loc.monday,
+      loc.tuesday,
+      loc.wednesday,
+      loc.thursday,
+      loc.friday,
+      loc.saturday,
+      loc.sunday,
+    ];
     return Positioned(
       top: 0,
       left: 0,
@@ -369,7 +380,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
             ),
             const SizedBox(height: 4),
             Text(
-              _getWeekdayName(date.weekday),
+              weekdayNames[date.weekday - 1],
               style: TextStyle(
                 fontSize: 10,
                 color: isWeekend
@@ -456,9 +467,4 @@ class _VisibleEvent {
     required this.actualStartOffset,
     required this.actualEndOffset,
   });
-}
-
-String _getWeekdayName(int weekday) {
-  const names = ['一', '二', '三', '四', '五', '六', '日'];
-  return names[weekday - 1];
 }

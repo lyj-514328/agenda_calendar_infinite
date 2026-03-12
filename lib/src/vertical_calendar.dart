@@ -1,7 +1,9 @@
 import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../generated/app_localizations.dart';
 import 'calendar_event.dart';
 import 'calendar_event_layout.dart';
 
@@ -128,12 +130,13 @@ class VerticalCalendarState extends State<VerticalCalendar> {
   }
 
   Widget _buildMonthHeader(BuildContext context, DateTime monthDate) {
+    final loc = AppLocalizations.of(context)!;
     return Container(
       height: _monthHeaderHeight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       child: Text(
-        DateFormat('yyyy年M月').format(monthDate),
+        DateFormat(loc.monthYearFormat).format(monthDate),
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -144,13 +147,24 @@ class VerticalCalendarState extends State<VerticalCalendar> {
   }
 
   Widget _buildWeekDays(BuildContext context) {
-    const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+    final loc = AppLocalizations.of(context)!;
+    final weekDays = [
+      loc.monday,
+      loc.tuesday,
+      loc.wednesday,
+      loc.thursday,
+      loc.friday,
+      loc.saturday,
+      loc.sunday,
+    ];
     return Container(
       height: _weekDayHeight,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
-        children: weekDays.map((day) {
-          final isWeekend = day == '六' || day == '日';
+        children: weekDays.asMap().entries.map((entry) {
+          final index = entry.key;
+          final day = entry.value;
+          final isWeekend = index == 5 || index == 6;
           return Expanded(
             child: Center(
               child: Text(
