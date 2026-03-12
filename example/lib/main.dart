@@ -153,50 +153,50 @@ class GanttChartExamplePage extends StatefulWidget {
 }
 
 class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
-  final List<GanttEvent> _events = [
-    GanttEvent(
-      id: '1',
-      title: '项目规划',
-      startDate: DateTime.now().add(const Duration(days: 1)),
-      endDate: DateTime.now().add(const Duration(days: 3)),
-      color: Colors.blue,
-    ),
-    GanttEvent(
-      id: '2',
-      title: 'UI设计',
-      startDate: DateTime.now().add(const Duration(days: 3)),
-      endDate: DateTime.now().add(const Duration(days: 7)),
-      color: Colors.purple,
-    ),
-    GanttEvent(
-      id: '3',
-      title: '前端开发',
-      startDate: DateTime.now().add(const Duration(days: 5)),
-      endDate: DateTime.now().add(const Duration(days: 15)),
-      color: Colors.green,
-    ),
-    GanttEvent(
-      id: '4',
-      title: '后端开发',
-      startDate: DateTime.now().add(const Duration(days: 6)),
-      endDate: DateTime.now().add(const Duration(days: 18)),
-      color: Colors.orange,
-    ),
-    GanttEvent(
-      id: '5',
-      title: '测试阶段',
-      startDate: DateTime.now().add(const Duration(days: 16)),
-      endDate: DateTime.now().add(const Duration(days: 20)),
-      color: Colors.red,
-    ),
-    GanttEvent(
-      id: '6',
-      title: '上线部署',
-      startDate: DateTime.now().add(const Duration(days: 21)),
-      endDate: DateTime.now().add(const Duration(days: 22)),
-      color: Colors.teal,
-    ),
-  ];
+  late final List<GanttEvent> _events;
+
+  @override
+  void initState() {
+    super.initState();
+    _events = _generateEvents();
+  }
+
+  List<GanttEvent> _generateEvents() {
+    final now = DateTime.now();
+    final events = <GanttEvent>[];
+
+    // 生成 50 个随机事件
+    final colors = [
+      Colors.blue,
+      Colors.purple,
+      Colors.green,
+      Colors.orange,
+      Colors.red,
+      Colors.teal,
+      Colors.indigo,
+      Colors.pink,
+      Colors.cyan,
+      Colors.amber,
+    ];
+
+    for (int i = 0; i < 50; i++) {
+      final startDay = (i * 2) - 20 + (i % 10);
+      final duration = 2 + (i % 8);
+      final color = colors[i % colors.length];
+
+      events.add(
+        GanttEvent(
+          id: '$i',
+          title: '任务 ${i + 1}',
+          startDate: now.add(Duration(days: startDay)),
+          endDate: now.add(Duration(days: startDay + duration)),
+          color: color,
+        ),
+      );
+    }
+
+    return events;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,8 +211,8 @@ class _GanttChartExamplePageState extends State<GanttChartExamplePage> {
         eventHeight: 40,
         rowHeight: 60,
         headerHeight: 60,
-        minDate: DateTime.now().subtract(const Duration(days: 30)),
-        maxDate: DateTime.now().add(const Duration(days: 60)),
+        minDate: DateTime.now().subtract(const Duration(days: 60)),
+        maxDate: DateTime.now().add(const Duration(days: 120)),
         onEventTap: (event) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('点击了事件: ${event.title}')),

@@ -3,6 +3,8 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
+import 'gantt_event_layout.dart';
+
 class GanttEvent {
   final String id;
   final String title;
@@ -57,21 +59,50 @@ class GanttChartState extends State<GanttChart> {
   Map<String, int>? _cachedEventRows;
   int? _cachedTotalRows;
 
+  int _minDayOffset = -500;
+  int _maxDayOffset = 500;
+
+  double _scrollOffset = 0;
+
   @override
   void initState() {
     super.initState();
     _horizontalController = ScrollController();
     _initialDate = widget.initialDate ?? DateTime.now();
     _calculateEventRows();
+    _calculateDayOffsets();
+
+    _horizontalController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollOffset = _horizontalController.offset;
+    });
   }
 
   @override
   void didUpdateWidget(GanttChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.events != widget.events) {
+    if (oldWidget.events != widget.events ||
+        oldWidget.minDate != widget.minDate ||
+        oldWidget.maxDate != widget.maxDate) {
       _cachedEventRows = null;
       _cachedTotalRows = null;
       _calculateEventRows();
+      _calculateDayOffsets();
+    }
+  }
+
+  void _calculateDayOffsets() {
+    _minDayOffset = -500;
+    _maxDayOffset = 500;
+
+    if (widget.minDate != null) {
+      _minDayOffset = _getDayOffsetFromInitial(widget.minDate!);
+    }
+    if (widget.maxDate != null) {
+      _maxDayOffset = _getDayOffsetFromInitial(widget.maxDate!);
     }
   }
 
@@ -140,22 +171,86 @@ class GanttChartState extends State<GanttChart> {
   Widget build(BuildContext context) {
     final totalHeight = widget.headerHeight + (_cachedTotalRows ?? 0) * widget.rowHeight;
 
-    return CustomScrollView(
-      controller: _horizontalController,
-      scrollDirection: Axis.horizontal,
-      center: _centerKey,
-      scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: {
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.touch,
-          PointerDeviceKind.stylus,
-          PointerDeviceKind.invertedStylus,
-        },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            CustomScrollView(
+              controller: _horizontalController,
+              scrollDirection: Axis.horizontal,
+              center: _centerKey,
+              scrollBehavior: const MaterialScrollBehavior().copyWith(
+                dragDevices: {
+                  PointerDeviceKind.mouse,
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.stylus,
+                  PointerDeviceKind.invertedStylus,
+                },
+              ),
+              slivers: [
+                _buildReverseSliver(totalHeight),
+                _buildForwardSliver(totalHeight),
+              ],
+            ),
+            _buildEventLayer(totalHeight, _scrollOffset, constraints.maxWidth),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEventLayer(double totalHeight, double scrollOffset, double visibleWidth) {
+    final visibleEvents = <_VisibleEvent>[];
+    const maxDays = 1000; // -500 到 +500 天
+    const halfMaxDays = 500; // 偏移量
+
+    // 计算可见范围
+    final scrollOffsetDay = (scrollOffset / widget.dayWidth).floor();
+    final visibleDays = (visibleWidth / widget.dayWidth).ceil();
+    final visibleStartDay = scrollOffsetDay - 1;
+    final visibleEndDay = scrollOffsetDay + visibleDays + 1;
+
+    for (final event in widget.events) {
+      final startDayOffset = _getDayOffsetFromInitial(event.startDate);
+      final endDayOffset = _getDayOffsetFromInitial(event.endDate);
+
+      // 跳过完全不可见的事件
+      if (endDayOffset < visibleStartDay || startDayOffset > visibleEndDay) {
+        continue;
+      }
+
+      final displayStart = math.max(startDayOffset, -halfMaxDays);
+      final displayEnd = math.min(endDayOffset, halfMaxDays);
+
+      final row = _cachedEventRows?[event.id] ?? 0;
+
+      visibleEvents.add(_VisibleEvent(
+        event: event,
+        startColumn: displayStart + halfMaxDays,
+        endColumn: displayEnd + halfMaxDays,
+        row: row,
+      ));
+    }
+
+    return Positioned(
+      left: -scrollOffset - halfMaxDays * widget.dayWidth,
+      top: widget.headerHeight,
+      width: maxDays * widget.dayWidth,
+      height: totalHeight - widget.headerHeight,
+      child: GanttEventLayout(
+        dayWidth: widget.dayWidth,
+        rowHeight: widget.rowHeight,
+        items: visibleEvents.map((e) => GanttEventItem(
+          id: e.event.id,
+          startColumn: e.startColumn,
+          endColumn: e.endColumn,
+          row: e.row,
+          child: GestureDetector(
+            onTap: () => widget.onEventTap?.call(e.event),
+            child: _buildEventWidget(e.event),
+          ),
+        )).toList(),
       ),
-      slivers: [
-        _buildReverseSliver(totalHeight),
-        _buildForwardSliver(totalHeight),
-      ],
     );
   }
 
@@ -163,13 +258,12 @@ class GanttChartState extends State<GanttChart> {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final dayOffset = -(index + 1);
-        final date = _getDateFromOffset(dayOffset);
 
-        if (widget.minDate != null && date.isBefore(widget.minDate!)) {
+        if (widget.minDate != null && dayOffset < _minDayOffset) {
           return SizedBox(width: widget.dayWidth);
         }
 
-        return _buildDayColumn(date, totalHeight);
+        return _buildDayColumn(dayOffset, totalHeight);
       }),
     );
   }
@@ -179,18 +273,18 @@ class GanttChartState extends State<GanttChart> {
       key: _centerKey,
       delegate: SliverChildBuilderDelegate((context, index) {
         final dayOffset = index;
-        final date = _getDateFromOffset(dayOffset);
 
-        if (widget.maxDate != null && date.isAfter(widget.maxDate!)) {
+        if (widget.maxDate != null && dayOffset > _maxDayOffset) {
           return SizedBox(width: widget.dayWidth);
         }
 
-        return _buildDayColumn(date, totalHeight);
+        return _buildDayColumn(dayOffset, totalHeight);
       }),
     );
   }
 
-  Widget _buildDayColumn(DateTime date, double totalHeight) {
+  Widget _buildDayColumn(int dayOffset, double totalHeight) {
+    final date = _getDateFromOffset(dayOffset);
     final isWeekend =
         date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
     final isToday = DateUtils.isSameDay(date, DateTime.now());
@@ -202,7 +296,6 @@ class GanttChartState extends State<GanttChart> {
         children: [
           _buildDayBackground(isWeekend),
           _buildDayHeader(date, isWeekend, isToday),
-          _buildDayEvents(date),
         ],
       ),
     );
@@ -273,72 +366,45 @@ class GanttChartState extends State<GanttChart> {
     );
   }
 
-  Widget _buildDayEvents(DateTime date) {
-    final dayStart = DateTime(date.year, date.month, date.day);
-    final widgets = <Widget>[];
-
-    for (final event in widget.events) {
-      final eventStart = DateTime(event.startDate.year, event.startDate.month, event.startDate.day);
-      final eventEnd = DateTime(event.endDate.year, event.endDate.month, event.endDate.day);
-
-      if (dayStart.isBefore(eventStart) || dayStart.isAfter(eventEnd)) {
-        continue;
-      }
-
-      final isStartOfEvent = DateUtils.isSameDay(dayStart, eventStart);
-      final isEndOfEvent = DateUtils.isSameDay(dayStart, eventEnd);
-      final row = _cachedEventRows?[event.id] ?? 0;
-
-      widgets.add(
-        Positioned(
-          left: 0,
-          top: widget.headerHeight + row * widget.rowHeight + (widget.rowHeight - widget.eventHeight) / 2,
-          width: widget.dayWidth,
-          height: widget.eventHeight,
-          child: GestureDetector(
-            onTap: () => widget.onEventTap?.call(event),
-            child: _buildEventWidget(event, isStartOfEvent, isEndOfEvent),
-          ),
-        ),
-      );
-    }
-
-    return Positioned.fill(
-      child: Stack(
-        children: widgets,
-      ),
-    );
-  }
-
-  Widget _buildEventWidget(GanttEvent event, bool isStartOfEvent, bool isEndOfEvent) {
+  Widget _buildEventWidget(GanttEvent event) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      margin: EdgeInsets.symmetric(
+        vertical: (widget.rowHeight - widget.eventHeight) / 2,
+        horizontal: 2,
+      ),
       decoration: BoxDecoration(
         color: event.color.withOpacity(0.8),
-        borderRadius: BorderRadius.only(
-          topLeft: isStartOfEvent ? const Radius.circular(4) : Radius.zero,
-          bottomLeft: isStartOfEvent ? const Radius.circular(4) : Radius.zero,
-          topRight: isEndOfEvent ? const Radius.circular(4) : Radius.zero,
-          bottomRight: isEndOfEvent ? const Radius.circular(4) : Radius.zero,
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          event.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            overflow: TextOverflow.ellipsis,
+          ),
+          maxLines: 2,
         ),
       ),
-      child: isStartOfEvent
-          ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text(
-                event.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                maxLines: 2,
-              ),
-            )
-          : null,
     );
   }
+}
+
+class _VisibleEvent {
+  final GanttEvent event;
+  final int startColumn;
+  final int endColumn;
+  final int row;
+
+  _VisibleEvent({
+    required this.event,
+    required this.startColumn,
+    required this.endColumn,
+    required this.row,
+  });
 }
 
 String _getWeekdayName(int weekday) {

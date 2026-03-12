@@ -160,7 +160,7 @@ class RenderGanttEventLayout extends RenderBox
       child = parentData.nextSibling;
     }
 
-    size = Size(maxWidth, maxHeight);
+    size = Size(constraints.maxWidth, constraints.maxHeight);
   }
 
   @override
