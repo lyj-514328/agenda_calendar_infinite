@@ -141,6 +141,48 @@ HorizontalCalendar(
 | maxDate      | DateTime?                    | Maximum date that can be scrolled to                                     |
 | onEventTap   | void Function(CalendarEvent)? | Callback when an event is tapped                                        |
 
+## 🌍 Internationalization Support
+
+This library supports multi-language automatic switching out of the box, with just two steps to configure:
+
+### Step 1: Add localization configuration
+Add the library's delegates and supported locales to your `MaterialApp`:
+
+```dart
+import 'package:agenda_calendar_infinite/agenda_calendar_infinite.dart';
+
+MaterialApp(
+  // Your other app configurations...
+  localizationsDelegates: const [
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    // Add this library's localization delegates
+    ...agendaCalendarLocalizationsDelegates,
+  ],
+  // Add this library's supported locales
+  supportedLocales: [
+    // Your app's other supported locales...
+    ...agendaCalendarSupportedLocales,
+  ],
+)
+```
+
+### Supported Languages
+- 🇺🇸 English (default)
+- 🇨🇳 Simplified Chinese
+
+### Manual Language Override
+If you want to fix the display language instead of following the system language:
+
+```dart
+MaterialApp(
+  // Force display Simplified Chinese
+  locale: const Locale('zh'),
+  // Other configurations same as above...
+)
+```
+
 ## Example
 
 See the `example` folder for a complete example application.

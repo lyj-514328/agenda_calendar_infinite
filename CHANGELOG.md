@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized event text display with auto center alignment in visible area, solving edge occlusion problem
 - Unified `CalendarEvent` class used by both VerticalCalendar and HorizontalCalendar
 - Complete horizontal calendar documentation, API references and usage examples in README
+- Internationalization support with built-in English and Simplified Chinese locales
+- Exposed `agendaCalendarLocalizationsDelegates` and `agendaCalendarSupportedLocales` for easy integration
+- All built-in text now supports automatic system language switching
 
 ## [0.0.3] - 2026-03-11
 
