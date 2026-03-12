@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import '../generated/app_localizations.dart';
+import '../agenda_calendar_infinite.dart';
+import '../utils/l10n.dart';
 import 'calendar_event.dart';
 import 'calendar_event_layout.dart';
 
@@ -130,7 +131,7 @@ class VerticalCalendarState extends State<VerticalCalendar> {
   }
 
   Widget _buildMonthHeader(BuildContext context, DateTime monthDate) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = getLoc(context);
     return Container(
       height: _monthHeaderHeight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -147,7 +148,7 @@ class VerticalCalendarState extends State<VerticalCalendar> {
   }
 
   Widget _buildWeekDays(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = getLoc(context);
     final weekDays = [
       loc.monday,
       loc.tuesday,

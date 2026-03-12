@@ -3,7 +3,8 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-import '../generated/app_localizations.dart';
+import '../agenda_calendar_infinite.dart';
+import '../utils/l10n.dart';
 import 'calendar_event.dart';
 import 'horizontal_calendar_event_layout.dart';
 
@@ -312,18 +313,20 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       height: totalHeight,
       child: Stack(
         children: [
-          _buildDayBackground(isWeekend),
+          _buildDayBackground(isWeekend, isToday),
           _buildDayHeader(date, isWeekend, isToday),
         ],
       ),
     );
   }
 
-  Widget _buildDayBackground(bool isWeekend) {
+  Widget _buildDayBackground(bool isWeekend, bool isToday) {
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
-          color: isWeekend
+          color: isToday
+              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+              : isWeekend
               ? Theme.of(
                   context,
                 ).colorScheme.surfaceContainerHighest.withOpacity(0.3)
@@ -337,7 +340,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
   }
 
   Widget _buildDayHeader(DateTime date, bool isWeekend, bool isToday) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = getLoc(context);
     final weekdayNames = [
       loc.monday,
       loc.tuesday,
@@ -444,7 +447,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
           ),
           textAlign: textAlign,
           overflow: TextOverflow.ellipsis,
-          maxLines: 2,
+          maxLines: 1,
         ),
       ),
     );
