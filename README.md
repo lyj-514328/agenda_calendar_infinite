@@ -1,35 +1,40 @@
-# Agenda Calendar Infinite
+# 📅 Agenda Calendar Infinite
 
-A Flutter calendar widget library with infinite scroll support, including both vertical month calendar and horizontal Gantt chart components.
+A Flutter calendar widget library with infinite scroll support, including both vertical month calendar and horizontal Gantt chart components ✨
 
-## Features
+## 🚀 Features
 
-### Vertical Calendar
-- Infinite scrollable calendar (both forward and backward)
-- Event display support with customizable colors
-- Multi-day event support (events spanning multiple days)
-- Cross-week event handling (events that span across weeks are displayed correctly in each week)
-- Customizable date range (minDate and maxDate)
-- Day selection with callback
-- Material Design 3 support
+### 📆 Vertical Calendar
 
-### Horizontal Calendar
-- Horizontal infinite scrollable timeline calendar view
-- Automatic overlapping event layout (no overlapping events)
-- Highly customizable style (day width, event height, row height, header height)
-- Weekend date visual differentiation with error color
-- Today auto-highlight with primary container style
-- Event tap callback support
-- Optimized event text display (auto center alignment in visible area, solving edge occlusion problem)
-- High performance rendering (only build visible area content)
+- ✨ Infinite scrollable calendar (both forward and backward)
+- 🎨 Event display support with customizable colors
+- 🗓️ Multi-day event support (events spanning multiple days)
+- 🔄 Cross-week event handling (events that span across weeks are displayed correctly in each week)
+- ⚙️ Customizable date range (minDate and maxDate)
+- 👇 Day selection with callback
+- 🎯 Material Design 3 support
+
+### ⏩ Horizontal Calendar
+
+- ✨ Horizontal infinite scrollable timeline calendar view
+- 🧩 Automatic overlapping event layout (no overlapping events)
+- 🎨 Highly customizable style (day width, event height, row height, header height)
+- 📅 Weekend date visual differentiation with error color
+- 🔴 Today auto-highlight with primary container style
+- 👇 Event tap callback support
+- 📝 Optimized event text display (auto center alignment in visible area, solving edge occlusion problem)
+- ⚡ High performance rendering (only build visible area content)
 
 ## Demo
 
 ### Vertical Calendar
+
 ![Vertical Calendar Demo](https://gist.githubusercontent.com/lyj-514328/0d23f1ef10584eaac9ae318fae9b1106/raw/a9a57e74256cfaa61216787feb4d8da4b71fb005/2026-03-11%252020-57-15-soConvert.webp)
 
 ### Horizontal Calendar
+
 The horizontal calendar component provides a timeline view for project management, scheduling and task tracking scenarios.
+![Horizontal Calendar Demo](https://gist.githubusercontent.com/lyj-514328/0d23f1ef10584eaac9ae318fae9b1106/raw/97da6b5781fdcb30bcb8caab99dcce5230512efb/2026-03-13%252021-30-15-soConvert.webp)
 
 ## Getting started
 
@@ -51,6 +56,7 @@ dependencies:
 ## Usage
 
 ### Vertical Calendar
+
 ```dart
 import 'package:agenda_calendar_infinite/agenda_calendar_infinite.dart';
 
@@ -79,6 +85,7 @@ VerticalCalendar(
 ```
 
 ### Horizontal Calendar
+
 ```dart
 import 'package:agenda_calendar_infinite/agenda_calendar_infinite.dart';
 
@@ -127,25 +134,36 @@ HorizontalCalendar(
 | color     | Color    | Background color of the event (default: Colors.blue) |
 | data      | dynamic  | Custom data associated with the event                |
 
+## VerticalCalendar Properties
+
+| Property      | Type                                      | Description                                                  |
+| ------------- | ----------------------------------------- | ------------------------------------------------------------ |
+| selectedDay   | DateTime?                                 | Currently selected date                                      |
+| onDaySelected | void Function(DateTime, DateTime)?        | Callback when a day is tapped, returns selected day and focused day |
+| eventsBuilder | List<CalendarEvent> Function(DateTime)?   | Builder function to return events for the specified month    |
+| minDate       | DateTime?                                 | Minimum scrollable date limit                                |
+| maxDate       | DateTime?                                 | Maximum scrollable date limit                                |
+
 ## HorizontalCalendar Properties
 
-| Property     | Type                         | Description                                                              |
-| ------------ | ---------------------------- | ------------------------------------------------------------------------ |
-| events       | List<CalendarEvent>          | List of events to display                                                |
-| dayWidth     | double                       | Width of each day column (default: 120)                                  |
-| eventHeight  | double                       | Height of each event card (default: 40)                                  |
-| rowHeight    | double                       | Height of each row (default: 60)                                         |
-| headerHeight | double                       | Height of the date header (default: 60)                                  |
-| initialDate  | DateTime?                    | Initial date to display (default: today)                                 |
-| minDate      | DateTime?                    | Minimum date that can be scrolled to                                     |
-| maxDate      | DateTime?                    | Maximum date that can be scrolled to                                     |
-| onEventTap   | void Function(CalendarEvent)? | Callback when an event is tapped                                        |
+| Property     | Type                          | Description                              |
+| ------------ | ----------------------------- | ---------------------------------------- |
+| events       | List`<CalendarEvent>`       | List of events to display                |
+| dayWidth     | double                        | Width of each day column (default: 120)  |
+| eventHeight  | double                        | Height of each event card (default: 40)  |
+| rowHeight    | double                        | Height of each row (default: 60)         |
+| headerHeight | double                        | Height of the date header (default: 60)  |
+| initialDate  | DateTime?                     | Initial date to display (default: today) |
+| minDate      | DateTime?                     | Minimum date that can be scrolled to     |
+| maxDate      | DateTime?                     | Maximum date that can be scrolled to     |
+| onEventTap   | void Function(CalendarEvent)? | Callback when an event is tapped         |
 
 ## 🌍 Internationalization Support
 
 This library supports multi-language automatic switching out of the box, with just two steps to configure:
 
 ### Step 1: Add localization configuration
+
 Add the library's delegates and supported locales to your `MaterialApp`:
 
 ```dart
@@ -169,10 +187,12 @@ MaterialApp(
 ```
 
 ### Supported Languages
+
 - 🇺🇸 English (default)
 - 🇨🇳 Simplified Chinese
 
 ### Manual Language Override
+
 If you want to fix the display language instead of following the system language:
 
 ```dart
