@@ -1,6 +1,6 @@
 name: agenda_calendar_infinite
 description: "A Flutter calendar widget library with infinite scroll support, including vertical calendar and horizontal Gantt chart components."
-version: 0.0.4
+version: 0.0.5
 homepage: https://github.com/lyj-514328/agenda_calendar_infinite
 repository: https://github.com/lyj-514328/agenda_calendar_infinite
 

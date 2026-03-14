@@ -34,7 +34,7 @@ A Flutter calendar widget library with infinite scroll support, including both v
 ### Horizontal Calendar
 
 The horizontal calendar component provides a timeline view for project management, scheduling and task tracking scenarios.
-![Horizontal Calendar Demo](https://gist.githubusercontent.com/lyj-514328/0d23f1ef10584eaac9ae318fae9b1106/raw/97da6b5781fdcb30bcb8caab99dcce5230512efb/2026-03-13%252021-30-15-soConvert.webp)
+![Horizontal Calendar Demo](https://gist.githubusercontent.com/lyj-514328/0d23f1ef10584eaac9ae318fae9b1106/raw/4c9ab1b85e796036a7e55dbba505b6fbd1e18f04/2026-03-15%252002-46-41-soConvert.webp)
 
 ## Getting started
 
@@ -42,7 +42,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  agenda_calendar_infinite: ^0.0.4
+  agenda_calendar_infinite: ^0.0.5
 ```
 
 Or reference it locally:
@@ -136,19 +136,19 @@ HorizontalCalendar(
 
 ## VerticalCalendar Properties
 
-| Property      | Type                                      | Description                                                  |
-| ------------- | ----------------------------------------- | ------------------------------------------------------------ |
-| selectedDay   | DateTime?                                 | Currently selected date                                      |
-| onDaySelected | void Function(DateTime, DateTime)?        | Callback when a day is tapped, returns selected day and focused day |
-| eventsBuilder | List<CalendarEvent> Function(DateTime)?   | Builder function to return events for the specified month    |
-| minDate       | DateTime?                                 | Minimum scrollable date limit                                |
-| maxDate       | DateTime?                                 | Maximum scrollable date limit                                |
+| Property      | Type                                         | Description                                                         |
+| ------------- | -------------------------------------------- | ------------------------------------------------------------------- |
+| selectedDay   | DateTime?                                    | Currently selected date                                             |
+| onDaySelected | void Function(DateTime, DateTime)?           | Callback when a day is tapped, returns selected day and focused day |
+| eventsBuilder | List `<CalendarEvent>` Function(DateTime)? | Builder function to return events for the specified month           |
+| minDate       | DateTime?                                    | Minimum scrollable date limit                                       |
+| maxDate       | DateTime?                                    | Maximum scrollable date limit                                       |
 
 ## HorizontalCalendar Properties
 
 | Property     | Type                          | Description                              |
 | ------------ | ----------------------------- | ---------------------------------------- |
-| events       | List`<CalendarEvent>`       | List of events to display                |
+| events       | List `<CalendarEvent>`      | List of events to display                |
 | dayWidth     | double                        | Width of each day column (default: 120)  |
 | eventHeight  | double                        | Height of each event card (default: 40)  |
 | rowHeight    | double                        | Height of each row (default: 60)         |

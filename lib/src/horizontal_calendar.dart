@@ -225,7 +225,8 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       final lastDayOfYear = DateTime(currentYear, 12, 31);
       final startOffset = _getDayOffsetFromInitial(firstDayOfYear);
       final endOffset = _getDayOffsetFromInitial(lastDayOfYear);
-      final left = startOffset * widget.dayWidth - scrollOffset;
+      final left =
+          startOffset * widget.dayWidth - scrollOffset + viewportWidth * 0.5;
       final width = (endOffset - startOffset + 1) * widget.dayWidth;
 
       // 只有当年份在可见范围内才渲染
@@ -294,11 +295,13 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     const maxDays = 1000; // -500 到 +500 天
     const halfMaxDays = 500; // 偏移量
 
-    // 计算可见范围
+    // 计算可见范围：因为anchor=0.5，视口中间对应scrollOffset=0的位置，需要调整偏移计算
+    final anchorOffsetDay = (viewportWidth / widget.dayWidth) * 0.5;
     final scrollOffsetDay = (scrollOffset / widget.dayWidth).floor();
     final visibleDays = (viewportWidth / widget.dayWidth).ceil();
-    final visibleStartDay = scrollOffsetDay - 1;
-    final visibleEndDay = scrollOffsetDay + visibleDays + 1;
+    final visibleStartDay = scrollOffsetDay - anchorOffsetDay.floor() - 1;
+    final visibleEndDay =
+        scrollOffsetDay + visibleDays - anchorOffsetDay.ceil() + 1;
 
     for (final event in widget.events) {
       final startDayOffset = _getDayOffsetFromInitial(event.startDate);
@@ -327,7 +330,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     }
 
     return Positioned(
-      left: -scrollOffset - halfMaxDays * widget.dayWidth,
+      left: -scrollOffset - halfMaxDays * widget.dayWidth + viewportWidth * 0.5,
       top: widget.headerHeight,
       width: maxDays * widget.dayWidth,
       height: totalHeight - widget.headerHeight,
@@ -345,8 +348,8 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                   onTap: () => widget.onEventTap?.call(e.event),
                   child: _buildEventWidget(
                     e.event,
-                    e.actualStartOffset - scrollOffset,
-                    e.actualEndOffset - scrollOffset,
+                    e.actualStartOffset - scrollOffset + viewportWidth * 0.5,
+                    e.actualEndOffset - scrollOffset + viewportWidth * 0.5,
                     viewportWidth,
                   ),
                 ),
@@ -491,10 +494,16 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     // 计算事件在可视区域内的实际边界
     final actualVisibleLeft = math.max(visibleLeft, 0.0);
     final actualVisibleRight = math.min(visibleRight, visibleWidth);
+    final visibleEventWidth = actualVisibleRight - actualVisibleLeft;
+
+    // 事件完全不可见，直接返回空容器
+    if (visibleEventWidth <= 0) {
+      return const SizedBox.shrink();
+    }
 
     // 可见区域居中对齐
     const TextAlign textAlign = TextAlign.center;
-    // 计算左右内边距，让文字始终在可见区域内居中显示
+    // 计算左右内边距，让文字始终在可见区域内精准居中
     final leftPadding = (actualVisibleLeft - visibleLeft).clamp(
       8.0,
       double.infinity,
@@ -512,7 +521,10 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
 
     return Container(
       margin: EdgeInsets.symmetric(
-        vertical: (widget.rowHeight - widget.eventHeight) / 2,
+        vertical: ((widget.rowHeight - widget.eventHeight) / 2).clamp(
+          0.0,
+          double.infinity,
+        ),
         horizontal: 2,
       ),
       decoration: BoxDecoration(
