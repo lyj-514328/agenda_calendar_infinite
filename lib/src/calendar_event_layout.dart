@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 /// 日历事件布局项目
-class CalendarEventItem {
+class VerticalCalendarItem {
   final String id;
   final int startColumn;
   final int endColumn;
   final Widget child;
 
-  CalendarEventItem({
+  VerticalCalendarItem({
     required this.id,
     required this.startColumn,
     required this.endColumn,
@@ -28,28 +28,28 @@ class CalendarEventItem {
 /// 2. 项目可以跨越多列
 /// 3. 自动堆叠：新项目会找到占用列的最大下边界作为起始位置
 /// 4. 动态高度：直接测量子组件实际高度
-class CalendarEventLayout extends MultiChildRenderObjectWidget {
+class VerticalCalendarLayout extends MultiChildRenderObjectWidget {
   final int columnCount;
   final double columnSpacing;
   final double rowSpacing;
   final double minRowHeight;
 
-  CalendarEventLayout({
+  VerticalCalendarLayout({
     super.key,
     this.columnCount = 7,
     this.columnSpacing = 2,
     this.rowSpacing = 2,
     this.minRowHeight = 20,
-    required List<CalendarEventItem> items,
+    required List<VerticalCalendarItem> items,
   }) : super(
          children: items
-             .map((e) => _CalendarEventItemData(item: e, child: e.child))
+             .map((e) => _VerticalCalendarItemData(item: e, child: e.child))
              .toList(),
        );
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderCalendarEventLayout(
+    return RenderVerticalCalendarLayout(
       columnCount: columnCount,
       columnSpacing: columnSpacing,
       rowSpacing: rowSpacing,
@@ -60,7 +60,7 @@ class CalendarEventLayout extends MultiChildRenderObjectWidget {
   @override
   void updateRenderObject(
     BuildContext context,
-    RenderCalendarEventLayout renderObject,
+    RenderVerticalCalendarLayout renderObject,
   ) {
     renderObject
       ..columnCount = columnCount
@@ -70,15 +70,15 @@ class CalendarEventLayout extends MultiChildRenderObjectWidget {
   }
 }
 
-class _CalendarEventItemData
-    extends ParentDataWidget<_CalendarEventItemParentData> {
-  final CalendarEventItem item;
+class _VerticalCalendarItemData
+    extends ParentDataWidget<_VerticalCalendarItemParentData> {
+  final VerticalCalendarItem item;
 
-  const _CalendarEventItemData({required super.child, required this.item});
+  const _VerticalCalendarItemData({required super.child, required this.item});
 
   @override
   void applyParentData(RenderObject renderObject) {
-    final parentData = renderObject.parentData as _CalendarEventItemParentData;
+    final parentData = renderObject.parentData as _VerticalCalendarItemParentData;
     if (parentData.item != item) {
       parentData.item = item;
       renderObject.markNeedsLayout();
@@ -86,26 +86,26 @@ class _CalendarEventItemData
   }
 
   @override
-  Type get debugTypicalAncestorWidgetClass => CalendarEventLayout;
+  Type get debugTypicalAncestorWidgetClass => VerticalCalendarLayout;
 }
 
-class _CalendarEventItemParentData extends ContainerBoxParentData<RenderBox> {
-  CalendarEventItem? item;
+class _VerticalCalendarItemParentData extends ContainerBoxParentData<RenderBox> {
+  VerticalCalendarItem? item;
 }
 
-class RenderCalendarEventLayout extends RenderBox
+class RenderVerticalCalendarLayout extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, _CalendarEventItemParentData>,
+        ContainerRenderObjectMixin<RenderBox, _VerticalCalendarItemParentData>,
         RenderBoxContainerDefaultsMixin<
           RenderBox,
-          _CalendarEventItemParentData
+          _VerticalCalendarItemParentData
         > {
   int _columnCount;
   double _columnSpacing;
   double _rowSpacing;
   double _minRowHeight;
 
-  RenderCalendarEventLayout({
+  RenderVerticalCalendarLayout({
     required int columnCount,
     required double columnSpacing,
     required double rowSpacing,
@@ -149,8 +149,8 @@ class RenderCalendarEventLayout extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! _CalendarEventItemParentData) {
-      child.parentData = _CalendarEventItemParentData();
+    if (child.parentData is! _VerticalCalendarItemParentData) {
+      child.parentData = _VerticalCalendarItemParentData();
     }
   }
 
@@ -172,7 +172,7 @@ class RenderCalendarEventLayout extends RenderBox
     // 一遍布局完成
     var child = firstChild;
     while (child != null) {
-      final parentData = child.parentData as _CalendarEventItemParentData;
+      final parentData = child.parentData as _VerticalCalendarItemParentData;
       final item = parentData.item!;
 
       final startCol = item.startColumn.clamp(0, columnCount - 1);

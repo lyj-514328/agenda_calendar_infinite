@@ -6,10 +6,9 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../agenda_calendar_infinite.dart';
 import '../utils/l10n.dart';
 import 'calendar_event.dart';
-import 'horizontal_calendar_event_layout.dart';
 
 class HorizontalCalendar extends StatefulWidget {
-  final List<CalendarEvent> events;
+  final List<CalendarEvent>? events;
   final double dayWidth;
   final double eventHeight;
   final double rowHeight;
@@ -18,10 +17,18 @@ class HorizontalCalendar extends StatefulWidget {
   final DateTime? minDate;
   final DateTime? maxDate;
   final void Function(CalendarEvent event)? onEventTap;
+  final bool compact;
+
+  /// 增量加载事件回调，返回需要加载的月份范围的事件
+  final Future<List<CalendarEvent>> Function(
+    DateTime startMonth,
+    DateTime endMonth,
+  )?
+  onLoadEvents;
 
   const HorizontalCalendar({
     super.key,
-    required this.events,
+    this.events,
     this.dayWidth = 120,
     this.eventHeight = 40,
     this.rowHeight = 60,
@@ -30,6 +37,8 @@ class HorizontalCalendar extends StatefulWidget {
     this.minDate,
     this.maxDate,
     this.onEventTap,
+    this.onLoadEvents,
+    this.compact = false,
   });
 
   @override
@@ -43,21 +52,43 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     'horizontal-calendar-center-key',
   );
 
-  Map<String, int>? _cachedEventRows;
-  int? _cachedTotalRows;
+  final CalendarEventLayout _eventLayout = CalendarEventLayout();
 
   int _minDayOffset = -500;
   int _maxDayOffset = 500;
 
   double _scrollOffset = 0;
 
+  // 增量加载相关状态
+  final Set<String> _loadedMonths = {}; // 已加载的月份，格式：2025-03
+  final Set<String> _loadingMonths = {}; // 正在加载的月份
+  final List<CalendarEvent> _allEvents = []; // 所有已加载的事件
+  final Set<String> _eventIds = {}; // 事件ID去重
+  bool _isIncrementalMode = false; // 是否为增量加载模式
+
   @override
   void initState() {
     super.initState();
     _horizontalController = ScrollController();
     _initialDate = widget.initialDate ?? DateTime.now();
-    _calculateEventRows();
     _calculateDayOffsets();
+
+    // 判断是否为增量加载模式
+    _isIncrementalMode = widget.onLoadEvents != null;
+
+    if (_isIncrementalMode) {
+      // 增量模式：加载初始月份前后3个月
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkNeedLoadEvents();
+      });
+    } else {
+      // 传统全量模式：直接使用传入的events
+      _allEvents.addAll(widget.events ?? []);
+      for (final event in _allEvents) {
+        _eventIds.add(event.id);
+      }
+      _calculateEventRows();
+    }
 
     _horizontalController.addListener(_onScroll);
   }
@@ -66,18 +97,118 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     setState(() {
       _scrollOffset = _horizontalController.offset;
     });
+    // 增量模式下检查是否需要加载新的月份
+    if (_isIncrementalMode) {
+      _checkNeedLoadEvents();
+    }
+  }
+
+  /// 检查是否需要加载新的月份事件
+  void _checkNeedLoadEvents() {
+    if (!_isIncrementalMode || widget.onLoadEvents == null) return;
+
+    // 计算当前可见范围的中心日期
+    final centerOffsetDay = (_scrollOffset / widget.dayWidth).round();
+    final centerDate = _getDateFromOffset(centerOffsetDay);
+
+    // 加载范围：当前月份前后3个月
+    final startLoadMonth = DateTime(centerDate.year, centerDate.month - 3, 1);
+    final endLoadMonth = DateTime(
+      centerDate.year,
+      centerDate.month + 4,
+      1,
+    ); // +4 因为要包含endMonth的前一个月
+
+    // 遍历需要加载的月份
+    for (
+      var month = startLoadMonth;
+      month.isBefore(endLoadMonth);
+      month = DateTime(month.year, month.month + 1)
+    ) {
+      // 检查是否超过minDate和maxDate限制
+      if (widget.minDate != null &&
+          month.isBefore(
+            DateTime(widget.minDate!.year, widget.minDate!.month, 1),
+          )) {
+        continue;
+      }
+      if (widget.maxDate != null &&
+          month.isAfter(
+            DateTime(widget.maxDate!.year, widget.maxDate!.month, 1),
+          )) {
+        continue;
+      }
+
+      final monthKey = '${month.year}-${month.month}';
+      if (!_loadedMonths.contains(monthKey) &&
+          !_loadingMonths.contains(monthKey)) {
+        _loadMonthEvents(month);
+      }
+    }
+  }
+
+  /// 加载指定月份的事件
+  Future<void> _loadMonthEvents(DateTime month) async {
+    final monthKey = '${month.year}-${month.month}';
+    if (_loadingMonths.contains(monthKey) || _loadedMonths.contains(monthKey)) {
+      return;
+    }
+
+    _loadingMonths.add(monthKey);
+    try {
+      // 计算当前月份的起止
+      final monthStart = DateTime(month.year, month.month, 1);
+      final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+      // 调用上层回调加载事件
+      final events = await widget.onLoadEvents!(monthStart, monthEnd);
+
+      if (mounted) {
+        // 增量添加事件
+        _addEvents(events);
+        _loadedMonths.add(monthKey);
+      }
+    } catch (e) {
+      debugPrint('加载月份$monthKey事件失败: $e');
+    } finally {
+      if (mounted) {
+        _loadingMonths.remove(monthKey);
+      }
+    }
   }
 
   @override
   void didUpdateWidget(HorizontalCalendar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.events != widget.events ||
+
+    final minMaxChanged =
         oldWidget.minDate != widget.minDate ||
-        oldWidget.maxDate != widget.maxDate) {
-      _cachedEventRows = null;
-      _cachedTotalRows = null;
-      _calculateEventRows();
+        oldWidget.maxDate != widget.maxDate;
+
+    if (minMaxChanged) {
       _calculateDayOffsets();
+      if (_isIncrementalMode) {
+        // 增量模式下日期范围变化，清空已加载数据重新加载
+        _loadedMonths.clear();
+        _loadingMonths.clear();
+        _allEvents.clear();
+        _eventIds.clear();
+        _eventLayout.clear();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkNeedLoadEvents();
+        });
+      }
+    }
+
+    // 全量模式下处理events变化
+    if (!_isIncrementalMode && oldWidget.events != widget.events) {
+      _allEvents.clear();
+      _eventIds.clear();
+      _allEvents.addAll(widget.events ?? []);
+      for (final event in _allEvents) {
+        _eventIds.add(event.id);
+      }
+      _calculateEventRows();
     }
   }
 
@@ -93,63 +224,44 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     }
   }
 
+  /// 全量计算事件行
   void _calculateEventRows() {
-    if (_cachedEventRows != null && _cachedTotalRows != null) {
-      return;
+    _eventLayout.clear();
+    _eventLayout.addEvents(_allEvents);
+  }
+
+  /// 增量添加新事件
+  void _addEvents(List<CalendarEvent> newEvents) {
+    if (newEvents.isEmpty) return;
+
+    for (final event in newEvents) {
+      if (_eventIds.contains(event.id)) continue; // 去重
+      _eventIds.add(event.id);
+      _allEvents.add(event);
+      _eventLayout.addSingleEvent(event);
     }
 
-    final usedRows = <int, List<DateTimeRange>>{};
-    final eventRows = <String, int>{};
-
-    for (final event in widget.events) {
-      final eventStart = DateTime(
-        event.startDate.year,
-        event.startDate.month,
-        event.startDate.day,
-      );
-      final eventEnd = DateTime(
-        event.endDate.year,
-        event.endDate.month,
-        event.endDate.day,
-      );
-
-      int row = 0;
-      bool placed = false;
-      while (!placed) {
-        final ranges = usedRows[row] ?? [];
-        bool canPlace = true;
-        for (final range in ranges) {
-          if (!(eventEnd.isBefore(range.start) ||
-              eventStart.isAfter(range.end))) {
-            canPlace = false;
-            break;
-          }
-        }
-        if (canPlace) {
-          usedRows
-              .putIfAbsent(row, () => [])
-              .add(DateTimeRange(start: eventStart, end: eventEnd));
-          eventRows[event.id] = row;
-          placed = true;
-        } else {
-          row++;
-        }
-      }
+    if (mounted) {
+      setState(() {});
     }
-
-    _cachedEventRows = eventRows;
-    _cachedTotalRows = usedRows.keys.isNotEmpty
-        ? usedRows.keys.reduce(math.max) + 1
-        : 0;
   }
 
   int _getDayOffsetFromInitial(DateTime date) {
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    final normalizedInitial = DateTime(
-      _initialDate.year,
-      _initialDate.month,
-      _initialDate.day,
+    // 统一转换为本地时间后再归一化日期
+    final localDate = date.toLocal();
+    final normalizedDate = DateTime(
+      localDate.year,
+      localDate.month,
+      localDate.day,
     );
+
+    final localInitial = _initialDate.toLocal();
+    final normalizedInitial = DateTime(
+      localInitial.year,
+      localInitial.month,
+      localInitial.day,
+    );
+
     return normalizedDate.difference(normalizedInitial).inDays;
   }
 
@@ -170,7 +282,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
   @override
   Widget build(BuildContext context) {
     final totalHeight =
-        widget.headerHeight + (_cachedTotalRows ?? 0) * widget.rowHeight;
+        widget.headerHeight + _eventLayout.totalRows * widget.rowHeight;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -257,8 +369,11 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainer,
-                border: const Border(
-                  right: BorderSide(width: 0.5, color: Colors.grey),
+                border: Border(
+                  right: BorderSide(
+                    width: 0.5,
+                    color: Theme.of(context).dividerColor,
+                  ),
                 ),
               ),
               child: Text(
@@ -291,19 +406,18 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
     double scrollOffset,
     double viewportWidth,
   ) {
-    final visibleEvents = <_VisibleEvent>[];
-    const maxDays = 1000; // -500 到 +500 天
-    const halfMaxDays = 500; // 偏移量
+    final visibleEvents = <VisibleEvent>[];
 
     // 计算可见范围：因为anchor=0.5，视口中间对应scrollOffset=0的位置，需要调整偏移计算
     final anchorOffsetDay = (viewportWidth / widget.dayWidth) * 0.5;
     final scrollOffsetDay = (scrollOffset / widget.dayWidth).floor();
     final visibleDays = (viewportWidth / widget.dayWidth).ceil();
-    final visibleStartDay = scrollOffsetDay - anchorOffsetDay.floor() - 1;
+    final visibleStartDay =
+        scrollOffsetDay - anchorOffsetDay.floor() - 10; // 多加载10天避免滚动空白
     final visibleEndDay =
-        scrollOffsetDay + visibleDays - anchorOffsetDay.ceil() + 1;
+        scrollOffsetDay + visibleDays - anchorOffsetDay.ceil() + 10;
 
-    for (final event in widget.events) {
+    for (final event in _allEvents) {
       final startDayOffset = _getDayOffsetFromInitial(event.startDate);
       final endDayOffset = _getDayOffsetFromInitial(event.endDate);
 
@@ -312,16 +426,13 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
         continue;
       }
 
-      final displayStart = math.max(startDayOffset, -halfMaxDays);
-      final displayEnd = math.min(endDayOffset, halfMaxDays);
-
-      final row = _cachedEventRows?[event.id] ?? 0;
+      final row = _eventLayout.getEventRow(event.id) ?? 0;
 
       visibleEvents.add(
-        _VisibleEvent(
+        VisibleEvent(
           event: event,
-          startColumn: displayStart + halfMaxDays,
-          endColumn: displayEnd + halfMaxDays,
+          startColumn: startDayOffset,
+          endColumn: endDayOffset,
           row: row,
           actualStartOffset: startDayOffset * widget.dayWidth,
           actualEndOffset: (endDayOffset + 1) * widget.dayWidth,
@@ -329,33 +440,33 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       );
     }
 
+    // 创建绘制器
+    final painter = HorizontalCalendarEventPainter(
+      visibleEvents: visibleEvents,
+      dayWidth: widget.dayWidth,
+      rowHeight: widget.rowHeight,
+      eventHeight: widget.eventHeight,
+      scrollOffset: scrollOffset,
+      viewportWidth: viewportWidth,
+      initialDate: _initialDate,
+      context: context,
+    );
+
     return Positioned(
-      left: -scrollOffset - halfMaxDays * widget.dayWidth + viewportWidth * 0.5,
+      left: 0,
+      right: 0,
       top: widget.headerHeight,
-      width: maxDays * widget.dayWidth,
       height: totalHeight - widget.headerHeight,
-      child: HorizontalCalendarEventLayout(
-        dayWidth: widget.dayWidth,
-        rowHeight: widget.rowHeight,
-        items: visibleEvents
-            .map(
-              (e) => HorizontalCalendarEventItem(
-                id: e.event.id,
-                startColumn: e.startColumn,
-                endColumn: e.endColumn,
-                row: e.row,
-                child: GestureDetector(
-                  onTap: () => widget.onEventTap?.call(e.event),
-                  child: _buildEventWidget(
-                    e.event,
-                    e.actualStartOffset - scrollOffset + viewportWidth * 0.5,
-                    e.actualEndOffset - scrollOffset + viewportWidth * 0.5,
-                    viewportWidth,
-                  ),
-                ),
-              ),
-            )
-            .toList(),
+      child: GestureDetector(
+        onTapUp: (details) {
+          // 点击抬起时才触发事件
+          final event = painter.getEventAtPosition(details.localPosition);
+          if (event != null) {
+            widget.onEventTap?.call(event);
+            event.onTap?.call();
+          }
+        },
+        child: CustomPaint(painter: painter),
       ),
     );
   }
@@ -411,14 +522,19 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       child: Container(
         decoration: BoxDecoration(
           color: isToday
-              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+              ? Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withValues(alpha: 0.3)
               : isWeekend
               ? Theme.of(
                   context,
-                ).colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
               : null,
-          border: const Border(
-            right: BorderSide(width: 0.5, color: Colors.grey),
+          border: Border(
+            right: BorderSide(
+              width: 0.5,
+              color: Theme.of(context).dividerColor,
+            ),
           ),
         ),
       ),
@@ -436,6 +552,11 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       loc.saturday,
       loc.sunday,
     ];
+
+    final dateFontSize = widget.compact ? 11.0 : 12.0;
+    final weekdayFontSize = widget.compact ? 9.0 : 10.0;
+    final spacing = widget.compact ? 1.0 : 2.0;
+
     return Positioned(
       top: 28, // 年份标签高度28，日期头部往下移
       left: 0,
@@ -448,8 +569,11 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
               : isToday
               ? Theme.of(context).colorScheme.primaryContainer
               : null,
-          border: const Border(
-            right: BorderSide(width: 0.5, color: Colors.grey),
+          border: Border(
+            right: BorderSide(
+              width: 0.5,
+              color: Theme.of(context).dividerColor,
+            ),
           ),
         ),
         child: Column(
@@ -458,7 +582,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
             Text(
               DateFormat('M/d').format(date),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: dateFontSize,
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                 color: isWeekend
                     ? Theme.of(context).colorScheme.error
@@ -467,11 +591,11 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                     : null,
               ),
             ),
-            const SizedBox(height: 2), // 缩小间距避免溢出
+            SizedBox(height: spacing), // 缩小间距避免溢出
             Text(
               weekdayNames[date.weekday - 1],
               style: TextStyle(
-                fontSize: 10,
+                fontSize: weekdayFontSize,
                 color: isWeekend
                     ? Theme.of(context).colorScheme.error
                     : isToday
@@ -484,72 +608,79 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
       ),
     );
   }
-
-  Widget _buildEventWidget(
-    CalendarEvent event,
-    double visibleLeft,
-    double visibleRight,
-    double visibleWidth,
-  ) {
-    // 计算事件在可视区域内的实际边界
-    final actualVisibleLeft = math.max(visibleLeft, 0.0);
-    final actualVisibleRight = math.min(visibleRight, visibleWidth);
-    final visibleEventWidth = actualVisibleRight - actualVisibleLeft;
-
-    // 事件完全不可见，直接返回空容器
-    if (visibleEventWidth <= 0) {
-      return const SizedBox.shrink();
-    }
-
-    // 可见区域居中对齐
-    const TextAlign textAlign = TextAlign.center;
-    // 计算左右内边距，让文字始终在可见区域内精准居中
-    final leftPadding = (actualVisibleLeft - visibleLeft).clamp(
-      8.0,
-      double.infinity,
-    );
-    final rightPadding = (visibleRight - actualVisibleRight).clamp(
-      8.0,
-      double.infinity,
-    );
-    final padding = EdgeInsets.only(
-      left: leftPadding,
-      right: rightPadding,
-      top: 4,
-      bottom: 4,
-    );
-
-    return Container(
-      margin: EdgeInsets.symmetric(
-        vertical: ((widget.rowHeight - widget.eventHeight) / 2).clamp(
-          0.0,
-          double.infinity,
-        ),
-        horizontal: 2,
-      ),
-      decoration: BoxDecoration(
-        color: event.color.withOpacity(0.8),
-        borderRadius: const BorderRadius.all(Radius.circular(4)),
-      ),
-      child: Padding(
-        padding: padding,
-        child: Text(
-          event.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: textAlign,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      ),
-    );
-  }
 }
 
-class _VisibleEvent {
+/// 事件布局计算器，负责计算事件的行位置，解决重叠问题
+class CalendarEventLayout {
+  final Map<String, int> _eventRows = {};
+  final Map<int, List<DateTimeRange>> _usedRows = {};
+  int _totalRows = 0;
+
+  int get totalRows => _totalRows;
+  Map<String, int> get eventRows => Map.unmodifiable(_eventRows);
+
+  /// 清空所有布局数据
+  void clear() {
+    _eventRows.clear();
+    _usedRows.clear();
+    _totalRows = 0;
+  }
+
+  /// 批量添加事件
+  void addEvents(List<CalendarEvent> events) {
+    for (final event in events) {
+      addSingleEvent(event);
+    }
+  }
+
+  /// 添加单个事件，计算其行位置
+  void addSingleEvent(CalendarEvent event) {
+    if (_eventRows.containsKey(event.id)) return;
+
+    // 统一转换为本地时间后再归一化日期
+    final localStart = event.startDate.toLocal();
+    final eventStart = DateTime(
+      localStart.year,
+      localStart.month,
+      localStart.day,
+    );
+
+    final localEnd = event.endDate.toLocal();
+    final eventEnd = DateTime(localEnd.year, localEnd.month, localEnd.day);
+
+    int row = 0;
+    bool placed = false;
+    while (!placed) {
+      final ranges = _usedRows[row] ?? [];
+      bool canPlace = true;
+      for (final range in ranges) {
+        if (!(eventEnd.isBefore(range.start) ||
+            eventStart.isAfter(range.end))) {
+          canPlace = false;
+          break;
+        }
+      }
+      if (canPlace) {
+        _usedRows
+            .putIfAbsent(row, () => [])
+            .add(DateTimeRange(start: eventStart, end: eventEnd));
+        _eventRows[event.id] = row;
+        placed = true;
+        if (row >= _totalRows) {
+          _totalRows = row + 1;
+        }
+      } else {
+        row++;
+      }
+    }
+  }
+
+  /// 获取事件的行号
+  int? getEventRow(String eventId) => _eventRows[eventId];
+}
+
+/// 可见事件数据类
+class VisibleEvent {
   final CalendarEvent event;
   final int startColumn;
   final int endColumn;
@@ -557,7 +688,7 @@ class _VisibleEvent {
   final double actualStartOffset;
   final double actualEndOffset;
 
-  _VisibleEvent({
+  VisibleEvent({
     required this.event,
     required this.startColumn,
     required this.endColumn,
@@ -565,4 +696,134 @@ class _VisibleEvent {
     required this.actualStartOffset,
     required this.actualEndOffset,
   });
+}
+
+/// 自定义事件绘制器
+class HorizontalCalendarEventPainter extends CustomPainter {
+  final List<VisibleEvent> visibleEvents;
+  final double dayWidth;
+  final double rowHeight;
+  final double eventHeight;
+  final double scrollOffset;
+  final double viewportWidth;
+  final DateTime initialDate;
+  final BuildContext context;
+
+  HorizontalCalendarEventPainter({
+    required this.visibleEvents,
+    required this.dayWidth,
+    required this.rowHeight,
+    required this.eventHeight,
+    required this.scrollOffset,
+    required this.viewportWidth,
+    required this.initialDate,
+    required this.context,
+  }) : super(repaint: const AlwaysStoppedAnimation(0));
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final anchorOffset = viewportWidth * 0.5;
+
+    for (final visibleEvent in visibleEvents) {
+      final event = visibleEvent.event;
+      // 计算事件在可见区域内的实际位置
+      final left = visibleEvent.actualStartOffset - scrollOffset + anchorOffset;
+      final right = visibleEvent.actualEndOffset - scrollOffset + anchorOffset;
+
+      // 事件完全不可见，跳过
+      if (right <= 0 || left >= viewportWidth) continue;
+
+      final actualLeft = left.clamp(0.0, viewportWidth);
+      final actualRight = right.clamp(0.0, viewportWidth);
+      final eventWidth = actualRight - actualLeft;
+      if (eventWidth <= 0) continue;
+
+      // 计算垂直位置
+      final top = visibleEvent.row * rowHeight + (rowHeight - eventHeight) / 2;
+      // 动态设置圆角：被截断的一侧用直角
+      final leftTruncated = left < 0; // 左侧被截断
+      final rightTruncated = right > viewportWidth; // 右侧被截断
+
+      final rect = RRect.fromRectAndCorners(
+        Rect.fromLTWH(actualLeft, top, eventWidth, eventHeight - 4),
+        topLeft: leftTruncated ? Radius.zero : const Radius.circular(8),
+        bottomLeft: leftTruncated ? Radius.zero : const Radius.circular(8),
+        topRight: rightTruncated ? Radius.zero : const Radius.circular(8),
+        bottomRight: rightTruncated ? Radius.zero : const Radius.circular(8),
+      );
+
+      // 绘制背景
+      final paint = Paint()..color = event.color.withValues(alpha: 0.8);
+      canvas.drawRRect(rect, paint);
+
+      // 计算文字内边距，事件被截断时最多留8px边距，避免文字被挤偏
+      final paddingLeft = (actualLeft - left).clamp(4.0, 8.0);
+      final paddingRight = (right - actualRight).clamp(4.0, 8.0);
+
+      // 宽度足够的情况下才绘制文字
+      final availableTextWidth = eventWidth - paddingLeft - paddingRight;
+      if (eventWidth >= 20 && availableTextWidth > 0) {
+        // 绘制文字
+        final textSpan = TextSpan(
+          text: event.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+
+        final textPainter = TextPainter(
+          text: textSpan,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+          ellipsis: '...',
+        );
+
+        textPainter.layout(minWidth: 0, maxWidth: availableTextWidth);
+
+        final textX =
+            actualLeft +
+            paddingLeft +
+            (availableTextWidth - textPainter.width) / 2;
+        final textY = top + (eventHeight - 4 - textPainter.height) / 2;
+        textPainter.paint(canvas, Offset(textX, textY));
+      }
+    }
+  }
+
+  /// 根据点击位置查找对应的事件
+  CalendarEvent? getEventAtPosition(Offset position) {
+    final anchorOffset = viewportWidth * 0.5;
+
+    for (final visibleEvent in visibleEvents) {
+      final left = visibleEvent.actualStartOffset - scrollOffset + anchorOffset;
+      final right = visibleEvent.actualEndOffset - scrollOffset + anchorOffset;
+      final top = visibleEvent.row * rowHeight + (rowHeight - eventHeight) / 2;
+      final bottom = top + eventHeight - 4;
+
+      if (position.dx >= left &&
+          position.dx <= right &&
+          position.dy >= top &&
+          position.dy <= bottom) {
+        return visibleEvent.event;
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  bool hitTest(Offset position) {
+    // 只返回是否命中，不处理点击事件，避免频繁触发
+    return getEventAtPosition(position) != null;
+  }
+
+  @override
+  bool shouldRepaint(covariant HorizontalCalendarEventPainter oldDelegate) {
+    return visibleEvents != oldDelegate.visibleEvents ||
+        scrollOffset != oldDelegate.scrollOffset ||
+        viewportWidth != oldDelegate.viewportWidth;
+  }
 }

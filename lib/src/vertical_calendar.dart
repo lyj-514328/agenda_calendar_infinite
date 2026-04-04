@@ -6,7 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../agenda_calendar_infinite.dart';
 import '../utils/l10n.dart';
 import 'calendar_event.dart';
-import 'calendar_event_layout.dart';
+import 'calendar_event_layout.dart'; // 导出VerticalCalendarLayout
 
 class VerticalCalendar extends StatefulWidget {
   final DateTime? selectedDay;
@@ -243,7 +243,7 @@ class VerticalCalendarState extends State<VerticalCalendar> {
               child: Row(children: days.sublist(i, i + 7)),
             ),
             if (groupedEvents.containsKey(weekIndex))
-              CalendarEventLayout(
+              VerticalCalendarLayout(
                 columnCount: 7,
                 columnSpacing: 2,
                 rowSpacing: _eventSpacing,
@@ -258,13 +258,13 @@ class VerticalCalendarState extends State<VerticalCalendar> {
     return Column(children: rows);
   }
 
-  Map<int, List<CalendarEventItem>> _groupEventsByWeek(
+  Map<int, List<VerticalCalendarItem>> _groupEventsByWeek(
     List<CalendarEvent> events,
     DateTime monthStart,
     int firstWeekday,
     double cellWidth,
   ) {
-    final groupedItems = <int, List<CalendarEventItem>>{};
+    final groupedItems = <int, List<VerticalCalendarItem>>{};
 
     for (final event in events) {
       final eventStart = DateTime(
@@ -302,7 +302,7 @@ class VerticalCalendarState extends State<VerticalCalendar> {
 
         groupedItems.putIfAbsent(week, () => []);
         groupedItems[week]!.add(
-          CalendarEventItem(
+          VerticalCalendarItem(
             id: '${event.id}_$week',
             startColumn: weekStartCol,
             endColumn: weekEndCol,
@@ -320,32 +320,35 @@ class VerticalCalendarState extends State<VerticalCalendar> {
     bool isStartOfWeek,
     bool isEndOfWeek,
   ) {
-    return Container(
-      margin: EdgeInsets.only(
-        left: isStartOfWeek ? 4 : 0,
-        right: isEndOfWeek ? 4 : 0,
-      ),
-      decoration: BoxDecoration(
-        color: event.color.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.only(
-          topLeft: isStartOfWeek ? const Radius.circular(4) : Radius.zero,
-          bottomLeft: isStartOfWeek ? const Radius.circular(4) : Radius.zero,
-          topRight: isEndOfWeek ? const Radius.circular(4) : Radius.zero,
-          bottomRight: isEndOfWeek ? const Radius.circular(4) : Radius.zero,
+    return GestureDetector(
+      onTap: event.onTap,
+      child: Container(
+        margin: EdgeInsets.only(
+          left: isStartOfWeek ? 4 : 0,
+          right: isEndOfWeek ? 4 : 0,
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-        child: Text(
-          event.title,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-            height: 1.2,
+        decoration: BoxDecoration(
+          color: event.color.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.only(
+            topLeft: isStartOfWeek ? const Radius.circular(4) : Radius.zero,
+            bottomLeft: isStartOfWeek ? const Radius.circular(4) : Radius.zero,
+            topRight: isEndOfWeek ? const Radius.circular(4) : Radius.zero,
+            bottomRight: isEndOfWeek ? const Radius.circular(4) : Radius.zero,
           ),
-          maxLines: null,
-          overflow: TextOverflow.clip,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+          child: Text(
+            event.title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+              height: 1.2,
+            ),
+            maxLines: null,
+            overflow: TextOverflow.clip,
+          ),
         ),
       ),
     );

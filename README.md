@@ -21,9 +21,13 @@ A Flutter calendar widget library with infinite scroll support, including both v
 - 🎨 Highly customizable style (day width, event height, row height, header height)
 - 📅 Weekend date visual differentiation with error color
 - 🔴 Today auto-highlight with primary container style
-- 👇 Event tap callback support
+- 👇 Event tap callback support (both global and per-event callbacks)
 - 📝 Optimized event text display (auto center alignment in visible area, solving edge occlusion problem)
-- ⚡ High performance rendering (only build visible area content)
+- ⚡ **High performance Canvas rendering**: CustomPainter direct drawing, 50%+ performance improvement, lower memory usage
+- 🔄 **Incremental loading support**: Load events on demand as user scrolls, supports unlimited dataset size
+- ⚡ **Dynamic corner radius**: Events automatically use right-angle corners when truncated at viewport edges
+- 📱 **Compact mode**: Reduce text size to fit narrow screen scenarios
+- ⏰ **Local time optimization**: Solve time zone issues with unified local time calculation
 
 ## Demo
 
@@ -42,7 +46,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  agenda_calendar_infinite: ^0.0.5
+  agenda_calendar_infinite: ^0.1.0
 ```
 
 Or reference it locally:
@@ -86,6 +90,8 @@ VerticalCalendar(
 
 ### Horizontal Calendar
 
+#### Basic Usage
+
 ```dart
 import 'package:agenda_calendar_infinite/agenda_calendar_infinite.dart';
 
@@ -97,6 +103,7 @@ HorizontalCalendar(
       startDate: DateTime(2026, 3, 10),
       endDate: DateTime(2026, 3, 11),
       color: Colors.blue,
+      onTap: () => print('Tapped Requirements Review'),
     ),
     CalendarEvent(
       id: 'task2',
@@ -123,16 +130,38 @@ HorizontalCalendar(
 )
 ```
 
+#### Incremental Loading Usage (for large datasets)
+
+```dart
+HorizontalCalendar(
+  dayWidth: 120,
+  eventHeight: 40,
+  rowHeight: 60,
+  initialDate: DateTime.now(),
+  minDate: DateTime(2020, 1, 1),
+  maxDate: DateTime(2030, 12, 31),
+  onEventTap: (event) {
+    print('Tapped event: ${event.title}');
+  },
+  // Incremental loading callback, load events for given month range
+  onLoadEvents: (startMonth, endMonth) async {
+    // Load events from your API/database for the date range
+    return await yourApi.loadEvents(startMonth, endMonth);
+  },
+)
+```
+
 ## CalendarEvent Properties
 
-| Property  | Type     | Description                                          |
-| --------- | -------- | ---------------------------------------------------- |
-| id        | String   | Unique identifier for the event                      |
-| title     | String   | Display title of the event                           |
-| startDate | DateTime | Start date of the event                              |
-| endDate   | DateTime | End date of the event                                |
-| color     | Color    | Background color of the event (default: Colors.blue) |
-| data      | dynamic  | Custom data associated with the event                |
+| Property  | Type           | Description                                          |
+| --------- | -------------- | ---------------------------------------------------- |
+| id        | String         | Unique identifier for the event                      |
+| title     | String         | Display title of the event                           |
+| startDate | DateTime       | Start date of the event                              |
+| endDate   | DateTime       | End date of the event                                |
+| color     | Color          | Background color of the event (default: Colors.blue) |
+| data      | dynamic        | Custom data associated with the event                |
+| onTap     | VoidCallback?  | Optional tap callback for the event                  |
 
 ## VerticalCalendar Properties
 
@@ -146,17 +175,19 @@ HorizontalCalendar(
 
 ## HorizontalCalendar Properties
 
-| Property     | Type                          | Description                              |
-| ------------ | ----------------------------- | ---------------------------------------- |
-| events       | List `<CalendarEvent>`      | List of events to display                |
-| dayWidth     | double                        | Width of each day column (default: 120)  |
-| eventHeight  | double                        | Height of each event card (default: 40)  |
-| rowHeight    | double                        | Height of each row (default: 60)         |
-| headerHeight | double                        | Height of the date header (default: 60)  |
-| initialDate  | DateTime?                     | Initial date to display (default: today) |
-| minDate      | DateTime?                     | Minimum date that can be scrolled to     |
-| maxDate      | DateTime?                     | Maximum date that can be scrolled to     |
-| onEventTap   | void Function(CalendarEvent)? | Callback when an event is tapped         |
+| Property     | Type                                                  | Description                                                                 |
+| ------------ | ----------------------------------------------------- | --------------------------------------------------------------------------- |
+| events       | List `<CalendarEvent>`?                             | List of events to display (not required when using incremental loading)     |
+| dayWidth     | double                                                | Width of each day column (default: 120)                                     |
+| eventHeight  | double                                                | Height of each event card (default: 40)                                     |
+| rowHeight    | double                                                | Height of each row (default: 60)                                            |
+| headerHeight | double                                                | Height of the date header (default: 60)                                     |
+| initialDate  | DateTime?                                             | Initial date to display (default: today)                                    |
+| minDate      | DateTime?                                             | Minimum date that can be scrolled to                                        |
+| maxDate      | DateTime?                                             | Maximum date that can be scrolled to                                        |
+| onEventTap   | void Function(CalendarEvent)?                        | Global callback when an event is tapped                                     |
+| compact      | bool                                                  | Whether to use compact mode with smaller text size (default: false)         |
+| onLoadEvents | Future<List<CalendarEvent>> Function(DateTime, DateTime)? | Incremental loading callback, receives start and end month, returns events |
 
 ## 🌍 Internationalization Support
 

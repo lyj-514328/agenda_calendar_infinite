@@ -7,6 +7,7 @@ class CalendarEvent {
   final DateTime endDate;
   final Color color;
   final dynamic data;
+  final VoidCallback? onTap;
 
   CalendarEvent({
     required this.id,
@@ -15,5 +16,6 @@ class CalendarEvent {
     required this.endDate,
     this.color = Colors.blue,
     this.data,
+    this.onTap,
   });
 }

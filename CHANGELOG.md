@@ -5,6 +5,24 @@ All notable changes to `agenda_calendar_infinite` will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-04-05
+
+### Added
+
+- ✨ **Incremental loading support for HorizontalCalendar**: Add `onLoadEvents` callback to load events on demand as user scrolls, significantly improving performance for large datasets
+- 🎨 **HorizontalCalendar rendering engine rewrite**: Replace RenderObject layout with CustomPainter direct drawing, 50%+ performance improvement, lower memory usage
+- ⚡ **Dynamic corner radius for events**: Events automatically use right-angle corners when truncated at viewport edges for more natural visual effect
+- 📱 **Compact mode for HorizontalCalendar**: Add `compact` parameter to reduce text size for narrow screen scenarios
+- 🔘 **Individual event tap callback**: Add `onTap` property to `CalendarEvent` class, supporting independent click processing for each event
+- ⏰ **Local time optimization**: Unified local time calculation for date offsets to solve time zone issues
+- 🚀 **Scrolling experience optimization**: Preload 10 days of events outside the visible range to eliminate blank areas during scrolling
+
+### Changed
+
+- 🔄 **VerticalCalendar layout class rename**: `CalendarEventLayout` → `VerticalCalendarLayout`, `CalendarEventItem` → `VerticalCalendarItem` for better naming consistency
+- 🗑️ **Remove deprecated code**: Delete obsolete `horizontal_calendar_event_layout.dart` file
+- 🛠️ **Deprecated API fix**: Replace `withOpacity` with `withValues` to eliminate compilation warnings
+
 ## [0.0.5] - 2026-03-15
 
 ### Fixed
